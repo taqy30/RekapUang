@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const COOKIE_NAME = "nabung_session";
+const COOKIE_NAME = "rekapuang_session";
 const publicPaths = ["/login", "/register"];
 
 function getSecret() {

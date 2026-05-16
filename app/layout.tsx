@@ -6,8 +6,9 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Aplikasi Nabung — Rekapitulasi Tabungan",
-  description: "Kelola tabungan Anda dengan kategori dan riwayat transaksi",
+  title: "RekapUang — Rekapitulasi Keuangan",
+  description:
+    "Catat pemasukan & pengeluaran, rekap per kategori, dan pantau riwayat harian atau bulanan",
   robots: { index: false, follow: false },
 };
 

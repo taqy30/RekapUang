@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Eye, EyeOff, PiggyBank } from "lucide-react";
+import { Eye, EyeOff, Wallet } from "lucide-react";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
 import OtpForm from "./OtpForm";
 import AppFooter from "./AppFooter";
@@ -139,13 +140,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-primary text-primary-foreground flex-col justify-between p-10">
         <div className="flex items-center gap-2.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-            <PiggyBank className="h-5 w-5" />
+            <Wallet className="h-5 w-5" />
           </div>
-          <span className="font-semibold text-lg">Aplikasi Nabung</span>
+          <span className="font-semibold text-lg">{APP_NAME}</span>
         </div>
         <div className="space-y-4 max-w-sm">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">
-            Kelola tabungan Anda dengan rapi dan mudah
+            {APP_TAGLINE}
           </h2>
           <p className="text-primary-foreground/80 text-sm leading-relaxed">
             Catat saldo masuk & keluar, kelompokkan per kategori, dan pantau
@@ -184,9 +185,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 <CardHeader className="space-y-3 pb-2">
                 <div className="lg:hidden flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <PiggyBank className="h-5 w-5" />
+                    <Wallet className="h-5 w-5" />
                   </div>
-                  <span className="font-semibold">Aplikasi Nabung</span>
+                  <span className="font-semibold">{APP_NAME}</span>
                 </div>
                 <div>
                   <CardTitle className="text-2xl">
@@ -194,7 +195,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   </CardTitle>
                   <CardDescription className="mt-1.5">
                     {mode === "login"
-                      ? "Masuk untuk melihat rekapitulasi tabungan Anda"
+                      ? "Masuk untuk melihat rekapitulasi keuangan Anda"
                       : "Daftar dan verifikasi email dengan kode OTP"}
                   </CardDescription>
                 </div>

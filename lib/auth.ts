@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 
-const COOKIE_NAME = "nabung_session";
+const COOKIE_NAME = "rekapuang_session";
 const EXPIRY = "7d";
 const EXPIRY_SECONDS = 60 * 60 * 24 * 7;
 

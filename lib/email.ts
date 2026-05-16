@@ -26,7 +26,7 @@ function getTransporter(): Transporter | null {
 function fromAddress(): string {
   return (
     process.env.SMTP_FROM ||
-    `Aplikasi Nabung <${process.env.SMTP_USER || "noreply@aplikasinabung.local"}>`
+    `RekapUang <${process.env.SMTP_USER || "noreply@rekapuang.local"}>`
   );
 }
 
@@ -41,7 +41,7 @@ function otpEmailHtml(name: string, code: string): string {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
           <tr>
             <td style="padding:28px 28px 8px 28px;">
-              <div style="display:inline-block;width:44px;height:44px;background:#ccfbf1;border-radius:10px;line-height:44px;text-align:center;font-size:22px;color:#0f766e;font-weight:700;">N</div>
+              <div style="display:inline-block;width:44px;height:44px;background:#ccfbf1;border-radius:10px;line-height:44px;text-align:center;font-size:22px;color:#0f766e;font-weight:700;">R</div>
               <h1 style="margin:16px 0 4px 0;font-size:20px;color:#0f172a;">Verifikasi Email</h1>
               <p style="margin:0;font-size:14px;color:#64748b;">Halo ${safeName}, masukkan kode berikut untuk menyelesaikan pendaftaran:</p>
             </td>
@@ -61,7 +61,7 @@ function otpEmailHtml(name: string, code: string): string {
             </td>
           </tr>
         </table>
-        <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;">© Aplikasi Nabung</p>
+        <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;">© RekapUang</p>
       </td>
     </tr>
   </table>
@@ -97,7 +97,7 @@ export async function sendOtpEmail(
     from: fromAddress(),
     to,
     subject: `Kode Verifikasi: ${code}`,
-    text: `Halo ${name},\n\nKode verifikasi Aplikasi Nabung Anda: ${code}\nBerlaku ${OTP_TTL_MINUTES} menit.\n\nJangan bagikan kode ini ke siapa pun.\n`,
+    text: `Halo ${name},\n\nKode verifikasi RekapUang Anda: ${code}\nBerlaku ${OTP_TTL_MINUTES} menit.\n\nJangan bagikan kode ini ke siapa pun.\n`,
     html: otpEmailHtml(name, code),
   });
 }

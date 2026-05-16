@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   CalendarDays,
   CalendarRange,
-  PiggyBank,
   Wallet,
 } from "lucide-react";
 import type { Transaction } from "./TransactionModal";
@@ -130,7 +129,7 @@ export default function HistoryView({ userName }: { userName: string }) {
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <PiggyBank className="h-5 w-5" />
+              <Wallet className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold sm:text-lg">

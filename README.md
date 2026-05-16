@@ -1,6 +1,6 @@
-# Aplikasi Nabung
+# RekapUang
 
-Aplikasi web rekapitulasi tabungan dengan login + OTP email, kategori transaksi, dan riwayat saldo masuk/keluar. Tampilan responsif, tanpa gradient, dengan keamanan berlapis.
+Aplikasi web rekapitulasi pemasukan & pengeluaran dengan login + OTP email, kategori transaksi, dan riwayat saldo masuk/keluar (filter harian & bulanan). Tampilan responsif, tanpa gradient, dengan keamanan berlapis.
 
 ## Fitur
 
@@ -69,7 +69,7 @@ SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_USER="email-anda@gmail.com"
 SMTP_PASSWORD="xxxx xxxx xxxx xxxx"
-SMTP_FROM="Aplikasi Nabung <email-anda@gmail.com>"
+SMTP_FROM="RekapUang <email-anda@gmail.com>"
 ```
 
 > Catatan: `SMTP_PASSWORD` adalah **App Password** 16 karakter, **bukan** password Gmail asli.

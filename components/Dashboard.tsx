@@ -11,10 +11,9 @@ import {
   LogOut,
   Minus,
   Pencil,
-  PiggyBank,
+  Wallet,
   Plus,
   Trash2,
-  Wallet,
   History,
 } from "lucide-react";
 import TransactionModal, {
@@ -34,6 +33,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import AppFooter from "./AppFooter";
+import { APP_NAME } from "@/lib/brand";
 import {
   formatRupiah,
   formatTransactionDate,
@@ -207,11 +207,11 @@ export default function Dashboard({ userName }: { userName: string }) {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <PiggyBank className="h-5 w-5" />
+              <Wallet className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold sm:text-lg">
-                Aplikasi Nabung
+                {APP_NAME}
               </h1>
               <p className="truncate text-xs text-muted-foreground">
                 Halo, {userName}
@@ -373,7 +373,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                 <p className="text-sm font-medium">Belum ada transaksi</p>
                 <p className="mt-1 text-xs text-muted-foreground max-w-xs">
                   Tambahkan saldo masuk atau keluar untuk mulai mencatat
-                  tabungan Anda
+                  keuangan Anda
                 </p>
                 <Button
                   className="mt-4"
