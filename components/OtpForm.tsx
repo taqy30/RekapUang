@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { goToDashboardAfterAuth } from "@/lib/navigation";
 import { ArrowLeft, Mail } from "lucide-react";
@@ -21,15 +20,10 @@ type OtpFormProps = {
 const RESEND_COOLDOWN = 60;
 
 export default function OtpForm({ email, onBack }: OtpFormProps) {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
-
-  useEffect(() => {
-    router.prefetch("/dashboard");
-  }, [router]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -61,7 +55,7 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
       }
 
       setLoading(false);
-      goToDashboardAfterAuth(router, "Verifikasi berhasil. Selamat datang!");
+      goToDashboardAfterAuth("Verifikasi berhasil. Selamat datang!");
       return;
     } catch {
       setError("Koneksi gagal, coba lagi");

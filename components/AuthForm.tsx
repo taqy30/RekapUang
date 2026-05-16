@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Eye, EyeOff, Wallet } from "lucide-react";
@@ -90,17 +89,12 @@ function PasswordField({
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"form" | "otp">("form");
-
-  useEffect(() => {
-    router.prefetch("/dashboard");
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +127,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
 
       setSubmitting(false);
-      goToDashboardAfterAuth(router);
+      goToDashboardAfterAuth();
       return;
     } catch {
       setError("Koneksi gagal, coba lagi");
