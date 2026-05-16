@@ -7,5 +7,9 @@ export function goToDashboardAfterAuth(
   message = "Login berhasil"
 ) {
   toast.success(message);
+  void fetch("/api/transactions", {
+    credentials: "include",
+    cache: "no-store",
+  }).catch(() => {});
   router.replace("/dashboard");
 }

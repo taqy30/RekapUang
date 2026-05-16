@@ -60,6 +60,7 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
         return;
       }
 
+      setLoading(false);
       goToDashboardAfterAuth(router, "Verifikasi berhasil. Selamat datang!");
       return;
     } catch {

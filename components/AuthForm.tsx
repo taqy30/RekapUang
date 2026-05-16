@@ -8,11 +8,11 @@ import { Eye, EyeOff, Wallet } from "lucide-react";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  fadeUp,
-  slideExitLeft,
-  slideExitRight,
-  slideFromLeft,
-  slideFromRight,
+  fadeUpRelaxed,
+  slideExitLeftRelaxed,
+  slideExitRightRelaxed,
+  slideFromLeftRelaxed,
+  slideFromRightRelaxed,
 } from "@/lib/motion";
 import { goToDashboardAfterAuth } from "@/lib/navigation";
 import OtpForm from "./OtpForm";
@@ -95,7 +95,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<"form" | "otp">("form");
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
 
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
     const body =
@@ -121,43 +121,32 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       if (!res.ok) {
         setError(data.error || "Terjadi kesalahan");
-        setLoading(false);
+        setSubmitting(false);
         return;
       }
 
       if (mode === "register") {
         toast.info("Kode OTP dikirim ke email Anda");
         setStep("otp");
-        setLoading(false);
+        setSubmitting(false);
         return;
       }
 
+      setSubmitting(false);
       goToDashboardAfterAuth(router);
       return;
     } catch {
       setError("Koneksi gagal, coba lagi");
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-muted/40">
-      {loading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/85 backdrop-blur-sm">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-            className="h-9 w-9 rounded-full border-2 border-primary border-t-transparent"
-          />
-          <p className="text-sm font-medium text-foreground">
-            {mode === "login" ? "Membuka dashboard..." : "Memproses..."}
-          </p>
-        </div>
-      )}
+    <div className="min-h-screen flex flex-col bg-muted/40">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       {/* Panel kiri — branding (desktop) */}
       <motion.div
-        {...slideFromLeft}
+        {...slideFromLeftRelaxed}
         className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-primary text-primary-foreground flex-col justify-between p-10"
       >
         <div className="flex items-center gap-2.5">
@@ -182,14 +171,14 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       {/* Panel kanan — form */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
-        <motion.div {...fadeUp} className="w-full max-w-[420px]">
+        <motion.div {...fadeUpRelaxed} className="w-full max-w-[420px]">
         <Card className="w-full border-0 shadow-lg sm:border sm:shadow-md relative overflow-hidden">
           <AnimatePresence mode="wait">
             {step === "otp" ? (
               <motion.div
                 key="otp"
-                {...slideFromRight}
-                {...slideExitLeft}
+                {...slideFromRightRelaxed}
+                {...slideExitLeftRelaxed}
               >
                 <CardContent className="pt-8 pb-6 px-6">
                   <OtpForm email={email} onBack={() => setStep("form")} />
@@ -198,8 +187,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
             ) : (
               <motion.div
                 key="form"
-                {...slideFromLeft}
-                {...slideExitRight}
+                {...slideFromLeftRelaxed}
+                {...slideExitRightRelaxed}
               >
                 <CardHeader className="space-y-3 pb-2">
                 <div className="lg:hidden flex items-center gap-2.5">
@@ -283,9 +272,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   <Button
                     type="submit"
                     className="w-full h-10"
-                    disabled={loading}
+                    disabled={submitting}
                   >
-                    {loading
+                    {submitting
                       ? "Memproses..."
                       : mode === "login"
                         ? "Masuk"

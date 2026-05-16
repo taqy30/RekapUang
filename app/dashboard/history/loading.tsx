@@ -1,3 +1,5 @@
-import DashboardLoading from "../loading";
+import DashboardLoadingScreen from "@/components/DashboardLoadingScreen";
 
-export default DashboardLoading;
+export default function HistoryLoading() {
+  return <DashboardLoadingScreen />;
+}

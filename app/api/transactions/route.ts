@@ -11,7 +11,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const data = await loadDashboardData(session.userId);
+  const data = await loadDashboardData(session.userId, {
+    transactionLimit: 60,
+  });
   return NextResponse.json(data);
 }
 
