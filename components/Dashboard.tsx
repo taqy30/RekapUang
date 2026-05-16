@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -20,6 +20,7 @@ import TransactionModal, {
   type Category,
   type Transaction,
 } from "./TransactionModal";
+import DashboardLoadingScreen from "./DashboardLoadingScreen";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -105,21 +106,19 @@ function StatCard({
 
 type DashboardProps = {
   userName: string;
-  initialData: DashboardData;
 };
 
-export default function Dashboard({ userName, initialData }: DashboardProps) {
+export default function Dashboard({ userName }: DashboardProps) {
   const router = useRouter();
-  const [transactions, setTransactions] = useState<Transaction[]>(
-    initialData.transactions as Transaction[]
-  );
-  const [categories, setCategories] = useState<Category[]>(
-    initialData.categories
-  );
-  const [summary, setSummary] = useState<Summary>(initialData.summary);
-  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>(
-    initialData.categorySummary
-  );
+  const [ready, setReady] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [summary, setSummary] = useState<Summary>({
+    saldo: 0,
+    totalMasuk: 0,
+    totalKeluar: 0,
+  });
+  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Transaction | null>(null);
   const [defaultType, setDefaultType] = useState<"masuk" | "keluar">("masuk");
@@ -137,10 +136,16 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
       setSummary(data.summary);
       setCategorySummary(data.categorySummary);
       setCategories(data.categories);
+      setReady(true);
     } catch {
       toast.error("Gagal memuat data");
+      setReady(true);
     }
   }, [router]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredTx = useMemo(() => {
     const list =
@@ -176,6 +181,10 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
     router.push("/login");
     router.refresh();
   };
+
+  if (!ready) {
+    return <DashboardLoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
@@ -548,4 +557,3 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
     </div>
   );
 }
-

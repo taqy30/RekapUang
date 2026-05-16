@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -13,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { Transaction } from "./TransactionModal";
+import DashboardLoadingScreen from "./DashboardLoadingScreen";
 import AppFooter from "./AppFooter";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -39,20 +42,19 @@ import {
   summarizeTransactions,
   todayDateKey,
 } from "@/lib/transactions-display";
+import type { DashboardData } from "@/lib/dashboard-data";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
 type HistoryViewProps = {
   userName: string;
-  initialTransactions: Transaction[];
 };
 
-export default function HistoryView({
-  userName,
-  initialTransactions,
-}: HistoryViewProps) {
+export default function HistoryView({ userName }: HistoryViewProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [transactions] = useState<Transaction[]>(initialTransactions);
+  const [ready, setReady] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [periodMode, setPeriodMode] = useState<PeriodMode>(
     (searchParams.get("mode") as PeriodMode) === "bulanan" ? "bulanan" : "harian"
   );
@@ -63,6 +65,26 @@ export default function HistoryView({
     searchParams.get("month") || currentMonthKey()
   );
   const [typeFilter, setTypeFilter] = useState<TxTypeFilter>("all");
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/transactions", { cache: "no-store" });
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      const data: DashboardData = await res.json();
+      setTransactions(data.transactions as Transaction[]);
+      setReady(true);
+    } catch {
+      toast.error("Gagal memuat data");
+      setReady(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const periodValue = periodMode === "harian" ? selectedDate : selectedMonth;
 
@@ -85,6 +107,10 @@ export default function HistoryView({
     () => summarizeByCategory(periodAll),
     [periodAll]
   );
+
+  if (!ready) {
+    return <DashboardLoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col pb-8">
