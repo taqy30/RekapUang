@@ -177,7 +177,7 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 animate-enter">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -223,27 +223,33 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          <StatCard
-            title="Saldo saat ini"
-            value={formatRupiah(summary.saldo)}
-            icon={Wallet}
-            variant="default"
-          />
-          <StatCard
-            title="Total masuk"
-            value={formatRupiah(summary.totalMasuk)}
-            icon={ArrowDownLeft}
-            variant="success"
-          />
-          <StatCard
-            title="Total keluar"
-            value={formatRupiah(summary.totalKeluar)}
-            icon={ArrowUpRight}
-            variant="destructive"
-          />
+          <div className="animate-enter">
+            <StatCard
+              title="Saldo saat ini"
+              value={formatRupiah(summary.saldo)}
+              icon={Wallet}
+              variant="default"
+            />
+          </div>
+          <div className="animate-enter animate-enter-delay-1">
+            <StatCard
+              title="Total masuk"
+              value={formatRupiah(summary.totalMasuk)}
+              icon={ArrowDownLeft}
+              variant="success"
+            />
+          </div>
+          <div className="animate-enter animate-enter-delay-2">
+            <StatCard
+              title="Total keluar"
+              value={formatRupiah(summary.totalKeluar)}
+              icon={ArrowUpRight}
+              variant="destructive"
+            />
+          </div>
         </section>
 
-        <div>
+        <div className="animate-enter animate-enter-delay-3">
           <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Rekap per kategori</CardTitle>
@@ -285,7 +291,7 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
         </Card>
         </div>
 
-        <div>
+        <div className="animate-enter" style={{ animationDelay: "0.12s" }}>
         <Card className="shadow-sm overflow-hidden">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>

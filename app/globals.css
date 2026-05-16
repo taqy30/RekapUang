@@ -53,3 +53,32 @@
     --chart-5: oklch(0.55 0.02 265);
   }
 }
+
+@layer utilities {
+  .animate-enter {
+    animation: enter-fade-up 0.22s ease-out both;
+  }
+
+  .animate-enter-delay-1 {
+    animation-delay: 0.05s;
+  }
+
+  .animate-enter-delay-2 {
+    animation-delay: 0.1s;
+  }
+
+  .animate-enter-delay-3 {
+    animation-delay: 0.15s;
+  }
+}
+
+@keyframes enter-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

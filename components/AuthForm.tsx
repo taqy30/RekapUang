@@ -7,6 +7,13 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Wallet } from "lucide-react";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  fadeUp,
+  slideExitLeft,
+  slideExitRight,
+  slideFromLeft,
+  slideFromRight,
+} from "@/lib/motion";
 import OtpForm from "./OtpForm";
 import AppFooter from "./AppFooter";
 import { Button } from "@/components/ui/button";
@@ -129,15 +136,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col"
-    >
-      <motion.div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col bg-muted/40">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       {/* Panel kiri — branding (desktop) */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-primary text-primary-foreground flex-col justify-between p-10">
+      <motion.div
+        {...slideFromLeft}
+        className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-primary text-primary-foreground flex-col justify-between p-10"
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
             <Wallet className="h-5 w-5" />
@@ -156,19 +161,18 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <p className="text-xs text-primary-foreground/60">
           Aman · Minimalis · Mudah digunakan
         </p>
-      </div>
+      </motion.div>
 
       {/* Panel kanan — form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-muted/40 relative overflow-hidden">
-        <Card className="w-full max-w-[420px] border-0 shadow-lg sm:border sm:shadow-md relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+        <motion.div {...fadeUp} className="w-full max-w-[420px]">
+        <Card className="w-full border-0 shadow-lg sm:border sm:shadow-md relative overflow-hidden">
           <AnimatePresence mode="wait">
             {step === "otp" ? (
               <motion.div
                 key="otp"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                {...slideFromRight}
+                {...slideExitLeft}
               >
                 <CardContent className="pt-8 pb-6 px-6">
                   <OtpForm email={email} onBack={() => setStep("form")} />
@@ -177,10 +181,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
             ) : (
               <motion.div
                 key="form"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                {...slideFromLeft}
+                {...slideExitRight}
               >
                 <CardHeader className="space-y-3 pb-2">
                 <div className="lg:hidden flex items-center gap-2.5">
@@ -305,9 +307,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
             )}
           </AnimatePresence>
         </Card>
+        </motion.div>
       </div>
-      </motion.div>
+      </div>
       <AppFooter className="border-t bg-muted/40 lg:bg-background" />
-    </motion.div>
+    </div>
   );
 }

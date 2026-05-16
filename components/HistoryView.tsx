@@ -86,7 +86,7 @@ export default function HistoryView({
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col pb-8">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur animate-enter">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link
             href="/dashboard"
@@ -112,7 +112,7 @@ export default function HistoryView({
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
-        <Card className="shadow-sm">
+        <Card className="shadow-sm animate-enter">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Filter periode</CardTitle>
             <CardDescription>
@@ -169,7 +169,7 @@ export default function HistoryView({
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 animate-enter animate-enter-delay-1">
           <Card size="sm" className="shadow-sm">
             <CardContent className="pt-0">
               <p className="text-xs text-muted-foreground">Total pemasukan</p>
@@ -244,7 +244,7 @@ export default function HistoryView({
           </Card>
         )}
 
-        <Card className="shadow-sm overflow-hidden">
+        <Card className="shadow-sm overflow-hidden animate-enter animate-enter-delay-2">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>
               <CardTitle className="text-base">Daftar transaksi</CardTitle>
