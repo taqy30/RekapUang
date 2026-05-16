@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import CurrencyInput from "./CurrencyInput";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +83,11 @@ export default function TransactionModal({
     }
     setError("");
   }, [open, editData, defaultType, categories]);
+
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === categoryId),
+    [categories, categoryId]
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,11 +173,21 @@ export default function TransactionModal({
               onValueChange={(v) => setCategoryId(v as string)}
             >
               <SelectTrigger className="w-full h-10">
-                <SelectValue placeholder="Pilih kategori" />
+                {selectedCategory ? (
+                  <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: selectedCategory.color }}
+                    />
+                    {selectedCategory.name}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Pilih kategori</span>
+                )}
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
+                  <SelectItem key={cat.id} value={cat.id} label={cat.name}>
                     <span className="flex items-center gap-2">
                       <span
                         className="h-2 w-2 rounded-full shrink-0"
