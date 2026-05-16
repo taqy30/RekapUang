@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession, isSameOrigin } from "@/lib/auth";
 import { transactionSchema, safeParseJson } from "@/lib/validation";
+import { parseTransactionDate } from "@/lib/utils";
 
 export async function GET() {
   const session = await getSession();
@@ -12,7 +13,7 @@ export async function GET() {
   const transactions = await prisma.transaction.findMany({
     where: { userId: session.userId },
     include: { category: true },
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
   });
 
   const masuk = transactions
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
         type,
         amount,
         description: description || null,
-        date: date ? new Date(date) : new Date(),
+        date: parseTransactionDate(date),
       },
       include: { category: true },
     });

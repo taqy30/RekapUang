@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -14,12 +15,13 @@ import {
   Plus,
   Trash2,
   Wallet,
+  History,
 } from "lucide-react";
 import TransactionModal, {
   type Category,
   type Transaction,
 } from "./TransactionModal";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -32,6 +34,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import AppFooter from "./AppFooter";
+import {
+  formatRupiah,
+  formatTransactionDate,
+  sortTransactionsNewestFirst,
+} from "@/lib/transactions-display";
 
 type Summary = {
   saldo: number;
@@ -47,23 +54,6 @@ type CategorySummary = {
   masuk: number;
   keluar: number;
 };
-
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function StatCard({
   title,
@@ -155,13 +145,13 @@ export default function Dashboard({ userName }: { userName: string }) {
     fetchData();
   }, [fetchData]);
 
-  const filteredTx = useMemo(
-    () =>
+  const filteredTx = useMemo(() => {
+    const list =
       filter === "all"
         ? transactions
-        : transactions.filter((t) => t.type === filter),
-    [transactions, filter]
-  );
+        : transactions.filter((t) => t.type === filter);
+    return [...list].sort(sortTransactionsNewestFirst);
+  }, [transactions, filter]);
 
   const openModal = (type: "masuk" | "keluar", edit?: Transaction) => {
     setDefaultType(type);
@@ -350,16 +340,28 @@ export default function Dashboard({ userName }: { userName: string }) {
                 {filter !== "all" && ` · filter ${filter}`}
               </CardDescription>
             </div>
-            <Tabs
-              value={filter}
-              onValueChange={(v) => setFilter(v as typeof filter)}
-            >
-              <TabsList>
-                <TabsTrigger value="all">Semua</TabsTrigger>
-                <TabsTrigger value="masuk">Masuk</TabsTrigger>
-                <TabsTrigger value="keluar">Keluar</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <Link
+                href="/dashboard/history"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "w-full sm:w-auto"
+                )}
+              >
+                <History className="h-4 w-4" />
+                Lihat detail
+              </Link>
+              <Tabs
+                value={filter}
+                onValueChange={(v) => setFilter(v as typeof filter)}
+              >
+                <TabsList>
+                  <TabsTrigger value="all">Semua</TabsTrigger>
+                  <TabsTrigger value="masuk">Masuk</TabsTrigger>
+                  <TabsTrigger value="keluar">Keluar</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </CardHeader>
 
           <CardContent className="p-0">
@@ -410,7 +412,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                             className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                           >
                             <td className="px-5 py-3 whitespace-nowrap">
-                              {formatDate(tx.date)}
+                              {formatTransactionDate(tx.date)}
                             </td>
                             <td className="px-5 py-3">
                               <span className="inline-flex items-center gap-1.5">
@@ -487,7 +489,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                                 {tx.category.name}
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                {formatDate(tx.date)}
+                                {formatTransactionDate(tx.date)}
                                 {tx.description && ` · ${tx.description}`}
                               </p>
                             </div>

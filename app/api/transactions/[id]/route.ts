@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession, isSameOrigin } from "@/lib/auth";
 import { transactionSchema, safeParseJson } from "@/lib/validation";
+import { parseTransactionDate } from "@/lib/utils";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -51,7 +52,7 @@ export async function PUT(request: Request, { params }: Params) {
         amount,
         categoryId,
         description: description || null,
-        date: date ? new Date(date) : undefined,
+        date: date ? parseTransactionDate(date) : undefined,
       },
       include: { category: true },
     });

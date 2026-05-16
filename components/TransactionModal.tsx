@@ -37,6 +37,7 @@ export type Transaction = {
   amount: number;
   description: string | null;
   date: string;
+  createdAt: string;
   categoryId: string;
   category: Category;
 };
