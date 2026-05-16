@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession, isSameOrigin } from "@/lib/auth";
 import { transactionSchema, safeParseJson } from "@/lib/validation";
 import { parseTransactionDate } from "@/lib/utils";
+import { loadDashboardData } from "@/lib/dashboard-data";
 
 export async function GET() {
   const session = await getSession();
@@ -10,53 +11,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const transactions = await prisma.transaction.findMany({
-    where: { userId: session.userId },
-    include: { category: true },
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-  });
-
-  const masuk = transactions
-    .filter((t) => t.type === "masuk")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const keluar = transactions
-    .filter((t) => t.type === "keluar")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const byCategory = await prisma.transaction.groupBy({
-    by: ["categoryId", "type"],
-    where: { userId: session.userId },
-    _sum: { amount: true },
-  });
-
-  const categories = await prisma.category.findMany();
-
-  const categorySummary = categories.map((cat) => {
-    const masukCat = byCategory.find(
-      (g) => g.categoryId === cat.id && g.type === "masuk"
-    );
-    const keluarCat = byCategory.find(
-      (g) => g.categoryId === cat.id && g.type === "keluar"
-    );
-    return {
-      id: cat.id,
-      name: cat.name,
-      slug: cat.slug,
-      color: cat.color,
-      masuk: masukCat?._sum.amount || 0,
-      keluar: keluarCat?._sum.amount || 0,
-    };
-  });
-
-  return NextResponse.json({
-    transactions,
-    summary: {
-      saldo: masuk - keluar,
-      totalMasuk: masuk,
-      totalKeluar: keluar,
-    },
-    categorySummary,
-  });
+  const data = await loadDashboardData(session.userId);
+  return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {

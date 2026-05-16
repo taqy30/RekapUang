@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -26,7 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   type PeriodMode,
@@ -41,12 +39,18 @@ import {
   todayDateKey,
 } from "@/lib/transactions-display";
 
-export default function HistoryView({ userName }: { userName: string }) {
-  const router = useRouter();
+type HistoryViewProps = {
+  userName: string;
+  initialTransactions: Transaction[];
+};
+
+export default function HistoryView({
+  userName,
+  initialTransactions,
+}: HistoryViewProps) {
   const searchParams = useSearchParams();
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [transactions] = useState<Transaction[]>(initialTransactions);
   const [periodMode, setPeriodMode] = useState<PeriodMode>(
     (searchParams.get("mode") as PeriodMode) === "bulanan" ? "bulanan" : "harian"
   );
@@ -59,26 +63,6 @@ export default function HistoryView({ userName }: { userName: string }) {
   const [typeFilter, setTypeFilter] = useState<TxTypeFilter>("all");
 
   const periodValue = periodMode === "harian" ? selectedDate : selectedMonth;
-
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/transactions");
-      if (res.status === 401) {
-        router.push("/login");
-        return;
-      }
-      const data = await res.json();
-      setTransactions(data.transactions || []);
-    } catch {
-      toast.error("Gagal memuat riwayat");
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const periodAll = useMemo(
     () => filterTransactions(transactions, periodMode, periodValue, "all"),
@@ -99,22 +83,6 @@ export default function HistoryView({ userName }: { userName: string }) {
     () => summarizeByCategory(periodAll),
     [periodAll]
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <header className="border-b bg-background">
-          <div className="mx-auto max-w-5xl px-4 py-4">
-            <Skeleton className="h-9 w-48" />
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6 space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col pb-8">

@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
@@ -30,7 +29,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import AppFooter from "./AppFooter";
 import { APP_NAME } from "@/lib/brand";
@@ -39,6 +37,7 @@ import {
   formatTransactionDate,
   sortTransactionsNewestFirst,
 } from "@/lib/transactions-display";
+import type { DashboardData } from "@/lib/dashboard-data";
 
 type Summary = {
   saldo: number;
@@ -102,17 +101,23 @@ function StatCard({
   );
 }
 
-export default function Dashboard({ userName }: { userName: string }) {
+type DashboardProps = {
+  userName: string;
+  initialData: DashboardData;
+};
+
+export default function Dashboard({ userName, initialData }: DashboardProps) {
   const router = useRouter();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [summary, setSummary] = useState<Summary>({
-    saldo: 0,
-    totalMasuk: 0,
-    totalKeluar: 0,
-  });
-  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>(
+    initialData.transactions as Transaction[]
+  );
+  const [categories, setCategories] = useState<Category[]>(
+    initialData.categories
+  );
+  const [summary, setSummary] = useState<Summary>(initialData.summary);
+  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>(
+    initialData.categorySummary
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Transaction | null>(null);
   const [defaultType, setDefaultType] = useState<"masuk" | "keluar">("masuk");
@@ -120,30 +125,20 @@ export default function Dashboard({ userName }: { userName: string }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const [txRes, catRes] = await Promise.all([
-        fetch("/api/transactions"),
-        fetch("/api/categories"),
-      ]);
-      if (txRes.status === 401) {
+      const res = await fetch("/api/transactions", { cache: "no-store" });
+      if (res.status === 401) {
         router.push("/login");
         return;
       }
-      const txData = await txRes.json();
-      const catData = await catRes.json();
-      setTransactions(txData.transactions || []);
-      setSummary(txData.summary || { saldo: 0, totalMasuk: 0, totalKeluar: 0 });
-      setCategorySummary(txData.categorySummary || []);
-      setCategories(catData || []);
+      const data: DashboardData = await res.json();
+      setTransactions(data.transactions as Transaction[]);
+      setSummary(data.summary);
+      setCategorySummary(data.categorySummary);
+      setCategories(data.categories);
     } catch {
       toast.error("Gagal memuat data");
-    } finally {
-      setLoading(false);
     }
   }, [router]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const filteredTx = useMemo(() => {
     const list =
@@ -161,11 +156,17 @@ export default function Dashboard({ userName }: { userName: string }) {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Hapus transaksi ini?")) return;
-    const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
-    if (res.ok) {
+    const previous = transactions;
+    setTransactions((curr) => curr.filter((t) => t.id !== id));
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       toast.success("Transaksi dihapus");
       fetchData();
-    } else toast.error("Gagal menghapus");
+    } catch {
+      setTransactions(previous);
+      toast.error("Gagal menghapus");
+    }
   };
 
   const handleLogout = async () => {
@@ -174,36 +175,9 @@ export default function Dashboard({ userName }: { userName: string }) {
     router.refresh();
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <header className="border-b bg-background">
-          <div className="mx-auto max-w-5xl px-4 py-4 flex justify-between">
-            <Skeleton className="h-9 w-40" />
-            <Skeleton className="h-9 w-20" />
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </main>
-        <AppFooter className="border-t bg-background" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      <motion.header 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-      >
+      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -245,46 +219,31 @@ export default function Dashboard({ userName }: { userName: string }) {
             </Button>
           </div>
         </div>
-      </motion.header>
+      </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
-        <motion.section 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, staggerChildren: 0.1 }}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
-        >
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-            <StatCard
-              title="Saldo saat ini"
-              value={formatRupiah(summary.saldo)}
-              icon={Wallet}
-              variant="default"
-            />
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
-            <StatCard
-              title="Total masuk"
-              value={formatRupiah(summary.totalMasuk)}
-              icon={ArrowDownLeft}
-              variant="success"
-            />
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
-            <StatCard
-              title="Total keluar"
-              value={formatRupiah(summary.totalKeluar)}
-              icon={ArrowUpRight}
-              variant="destructive"
-            />
-          </motion.div>
-        </motion.section>
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <StatCard
+            title="Saldo saat ini"
+            value={formatRupiah(summary.saldo)}
+            icon={Wallet}
+            variant="default"
+          />
+          <StatCard
+            title="Total masuk"
+            value={formatRupiah(summary.totalMasuk)}
+            icon={ArrowDownLeft}
+            variant="success"
+          />
+          <StatCard
+            title="Total keluar"
+            value={formatRupiah(summary.totalKeluar)}
+            icon={ArrowUpRight}
+            variant="destructive"
+          />
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-        >
+        <div>
           <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Rekap per kategori</CardTitle>
@@ -324,13 +283,9 @@ export default function Dashboard({ userName }: { userName: string }) {
             })}
           </CardContent>
         </Card>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.5 }}
-        >
+        <div>
         <Card className="shadow-sm overflow-hidden">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>
@@ -402,13 +357,9 @@ export default function Dashboard({ userName }: { userName: string }) {
                       </tr>
                     </thead>
                     <tbody>
-                      <AnimatePresence>
                         {filteredTx.map((tx) => (
-                          <motion.tr
+                          <tr
                             key={tx.id}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
                             className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                           >
                             <td className="px-5 py-3 whitespace-nowrap">
@@ -460,21 +411,16 @@ export default function Dashboard({ userName }: { userName: string }) {
                                 </Button>
                               </div>
                             </td>
-                          </motion.tr>
+                          </tr>
                         ))}
-                      </AnimatePresence>
                     </tbody>
                   </table>
                 </div>
 
                 <ul className="md:hidden divide-y">
-                  <AnimatePresence>
                   {filteredTx.map((tx) => (
-                    <motion.li 
-                      key={tx.id} 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
+                    <li
+                      key={tx.id}
                       className="px-4 py-3.5"
                     >
                       <div className="flex gap-3">
@@ -536,25 +482,19 @@ export default function Dashboard({ userName }: { userName: string }) {
                           </div>
                         </div>
                       </div>
-                    </motion.li>
+                    </li>
                   ))}
-                  </AnimatePresence>
                 </ul>
               </>
             )}
           </CardContent>
         </Card>
-        </motion.div>
+        </div>
       </main>
 
       <AppFooter className="mt-auto border-t bg-background/95 pb-28 sm:pb-4" />
 
-      <motion.div 
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/80 p-3 backdrop-blur-lg sm:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.04)]"
-      >
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/80 p-3 backdrop-blur-lg sm:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
         <div className="mx-auto flex max-w-lg gap-2">
           <Button className="flex-1 rounded-xl h-12 shadow-sm" onClick={() => openModal("masuk")}>
             <Plus className="h-5 w-5 mr-1" />
@@ -569,7 +509,7 @@ export default function Dashboard({ userName }: { userName: string }) {
             Keluar
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       <TransactionModal
         open={modalOpen}
