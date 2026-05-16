@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import {
   slideFromLeft,
   slideFromRight,
 } from "@/lib/motion";
+import { goToDashboardAfterAuth } from "@/lib/navigation";
 import OtpForm from "./OtpForm";
 import AppFooter from "./AppFooter";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"form" | "otp">("form");
 
+  useEffect(() => {
+    router.prefetch("/dashboard");
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -116,27 +121,39 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       if (!res.ok) {
         setError(data.error || "Terjadi kesalahan");
+        setLoading(false);
         return;
       }
 
       if (mode === "register") {
         toast.info("Kode OTP dikirim ke email Anda");
         setStep("otp");
+        setLoading(false);
         return;
       }
 
-      toast.success("Login berhasil");
-      router.push("/dashboard");
-      router.refresh();
+      goToDashboardAfterAuth(router);
+      return;
     } catch {
       setError("Koneksi gagal, coba lagi");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/40">
+    <div className="relative min-h-screen flex flex-col bg-muted/40">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/85 backdrop-blur-sm">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+            className="h-9 w-9 rounded-full border-2 border-primary border-t-transparent"
+          />
+          <p className="text-sm font-medium text-foreground">
+            {mode === "login" ? "Membuka dashboard..." : "Memproses..."}
+          </p>
+        </div>
+      )}
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       {/* Panel kiri — branding (desktop) */}
       <motion.div

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { goToDashboardAfterAuth } from "@/lib/navigation";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,6 +26,10 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
+
+  useEffect(() => {
+    router.prefetch("/dashboard");
+  }, [router]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -51,15 +56,14 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
       if (!res.ok) {
         setError(data.error || "Verifikasi gagal");
         setCode("");
+        setLoading(false);
         return;
       }
 
-      toast.success("Verifikasi berhasil. Selamat datang!");
-      router.push("/dashboard");
-      router.refresh();
+      goToDashboardAfterAuth(router, "Verifikasi berhasil. Selamat datang!");
+      return;
     } catch {
       setError("Koneksi gagal, coba lagi");
-    } finally {
       setLoading(false);
     }
   };

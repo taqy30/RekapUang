@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
@@ -38,6 +39,7 @@ import {
   sortTransactionsNewestFirst,
 } from "@/lib/transactions-display";
 import type { DashboardData } from "@/lib/dashboard-data";
+import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
 type Summary = {
   saldo: number;
@@ -177,7 +179,12 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 animate-enter">
+      <motion.header
+        initial="initial"
+        animate="animate"
+        variants={headerSlide}
+        className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      >
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -219,37 +226,42 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
             </Button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          <div className="animate-enter">
+        <motion.section
+          className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          <motion.div variants={staggerItem}>
             <StatCard
               title="Saldo saat ini"
               value={formatRupiah(summary.saldo)}
               icon={Wallet}
               variant="default"
             />
-          </div>
-          <div className="animate-enter animate-enter-delay-1">
+          </motion.div>
+          <motion.div variants={staggerItem}>
             <StatCard
               title="Total masuk"
               value={formatRupiah(summary.totalMasuk)}
               icon={ArrowDownLeft}
               variant="success"
             />
-          </div>
-          <div className="animate-enter animate-enter-delay-2">
+          </motion.div>
+          <motion.div variants={staggerItem}>
             <StatCard
               title="Total keluar"
               value={formatRupiah(summary.totalKeluar)}
               icon={ArrowUpRight}
               variant="destructive"
             />
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <div className="animate-enter animate-enter-delay-3">
+        <motion.div variants={staggerItem} initial="initial" animate="animate">
           <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Rekap per kategori</CardTitle>
@@ -289,9 +301,14 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
             })}
           </CardContent>
         </Card>
-        </div>
+        </motion.div>
 
-        <div className="animate-enter" style={{ animationDelay: "0.12s" }}>
+        <motion.div
+          variants={staggerItem}
+          initial="initial"
+          animate="animate"
+          transition={{ delay: 0.12 }}
+        >
         <Card className="shadow-sm overflow-hidden">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>
@@ -495,7 +512,7 @@ export default function Dashboard({ userName, initialData }: DashboardProps) {
             )}
           </CardContent>
         </Card>
-        </div>
+        </motion.div>
       </main>
 
       <AppFooter className="mt-auto border-t bg-background/95 pb-28 sm:pb-4" />

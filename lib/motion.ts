@@ -37,13 +37,26 @@ export const slideExitRight = {
 };
 
 export const staggerContainer = {
+  initial: {},
   animate: {
-    transition: { staggerChildren: 0.05, delayChildren: 0.02 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.04 },
   },
 };
 
 export const staggerItem = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.2, ease: easeOut },
+  initial: { opacity: 0, y: 14 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: easeOut },
+  },
+};
+
+export const headerSlide = {
+  initial: { opacity: 0, y: -8 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.25, ease: easeOut },
+  },
 };

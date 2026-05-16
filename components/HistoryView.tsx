@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowDownLeft,
@@ -38,6 +39,7 @@ import {
   summarizeTransactions,
   todayDateKey,
 } from "@/lib/transactions-display";
+import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
 type HistoryViewProps = {
   userName: string;
@@ -86,7 +88,12 @@ export default function HistoryView({
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col pb-8">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur animate-enter">
+      <motion.header
+        initial="initial"
+        animate="animate"
+        variants={headerSlide}
+        className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur"
+      >
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link
             href="/dashboard"
@@ -109,10 +116,15 @@ export default function HistoryView({
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
-        <Card className="shadow-sm animate-enter">
+        <motion.div
+          variants={staggerItem}
+          initial="initial"
+          animate="animate"
+        >
+        <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Filter periode</CardTitle>
             <CardDescription>
@@ -168,8 +180,15 @@ export default function HistoryView({
             </p>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 animate-enter animate-enter-delay-1">
+        <motion.section
+          className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          <motion.div variants={staggerItem}>
           <Card size="sm" className="shadow-sm">
             <CardContent className="pt-0">
               <p className="text-xs text-muted-foreground">Total pemasukan</p>
@@ -178,6 +197,8 @@ export default function HistoryView({
               </p>
             </CardContent>
           </Card>
+          </motion.div>
+          <motion.div variants={staggerItem}>
           <Card size="sm" className="shadow-sm">
             <CardContent className="pt-0">
               <p className="text-xs text-muted-foreground">Total pengeluaran</p>
@@ -186,6 +207,8 @@ export default function HistoryView({
               </p>
             </CardContent>
           </Card>
+          </motion.div>
+          <motion.div variants={staggerItem}>
           <Card size="sm" className="shadow-sm">
             <CardContent className="pt-0">
               <p className="text-xs text-muted-foreground">Selisih periode</p>
@@ -200,7 +223,8 @@ export default function HistoryView({
               </p>
             </CardContent>
           </Card>
-        </div>
+          </motion.div>
+        </motion.section>
 
         {categoryRows.length > 0 && (
           <Card className="shadow-sm">
@@ -244,7 +268,8 @@ export default function HistoryView({
           </Card>
         )}
 
-        <Card className="shadow-sm overflow-hidden animate-enter animate-enter-delay-2">
+        <motion.div variants={staggerItem} initial="initial" animate="animate">
+        <Card className="shadow-sm overflow-hidden">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>
               <CardTitle className="text-base">Daftar transaksi</CardTitle>
@@ -346,6 +371,7 @@ export default function HistoryView({
             )}
           </CardContent>
         </Card>
+        </motion.div>
       </main>
 
       <AppFooter className="mt-auto border-t bg-background/95" />
