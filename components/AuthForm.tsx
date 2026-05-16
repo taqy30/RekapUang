@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, PiggyBank } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import OtpForm from "./OtpForm";
+import AppFooter from "./AppFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,12 +128,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex"
+      className="min-h-screen flex flex-col"
     >
+      <motion.div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       {/* Panel kiri — branding (desktop) */}
       <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] bg-primary text-primary-foreground flex-col justify-between p-10">
         <div className="flex items-center gap-2.5">
@@ -303,6 +305,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </AnimatePresence>
         </Card>
       </div>
+      </motion.div>
+      <AppFooter className="border-t bg-muted/40 lg:bg-background" />
     </motion.div>
   );
 }

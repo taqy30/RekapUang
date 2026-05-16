@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import AppFooter from "./AppFooter";
 
 type Summary = {
   saldo: number;
@@ -200,12 +201,13 @@ export default function Dashboard({ userName }: { userName: string }) {
           </div>
           <Skeleton className="h-64 w-full rounded-xl" />
         </main>
+        <AppFooter className="border-t bg-background" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-24 sm:pb-8">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -255,7 +257,7 @@ export default function Dashboard({ userName }: { userName: string }) {
         </div>
       </motion.header>
 
-      <main className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6 sm:py-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -542,6 +544,8 @@ export default function Dashboard({ userName }: { userName: string }) {
         </Card>
         </motion.div>
       </main>
+
+      <AppFooter className="mt-auto border-t bg-background/95 pb-28 sm:pb-4" />
 
       <motion.div 
         initial={{ y: 100 }}
