@@ -1,0 +1,582 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  LogOut,
+  Minus,
+  Pencil,
+  PiggyBank,
+  Plus,
+  Trash2,
+  Wallet,
+} from "lucide-react";
+import TransactionModal, {
+  type Category,
+  type Transaction,
+} from "./TransactionModal";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+type Summary = {
+  saldo: number;
+  totalMasuk: number;
+  totalKeluar: number;
+};
+
+type CategorySummary = {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  masuk: number;
+  keluar: number;
+};
+
+function formatRupiah(amount: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  variant,
+}: {
+  title: string;
+  value: string;
+  description?: string;
+  icon: React.ElementType;
+  variant: "default" | "success" | "destructive";
+}) {
+  const iconClass =
+    variant === "success"
+      ? "bg-emerald-100 text-emerald-700"
+      : variant === "destructive"
+        ? "bg-red-100 text-red-700"
+        : "bg-primary/10 text-primary";
+
+  return (
+    <Card size="sm" className="shadow-sm">
+      <CardContent className="pt-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">{title}</p>
+            <p className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
+              {value}
+            </p>
+            {description && (
+              <p className="text-xs text-muted-foreground">{description}</p>
+            )}
+          </div>
+          <div
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+              iconClass
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function Dashboard({ userName }: { userName: string }) {
+  const router = useRouter();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [summary, setSummary] = useState<Summary>({
+    saldo: 0,
+    totalMasuk: 0,
+    totalKeluar: 0,
+  });
+  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editData, setEditData] = useState<Transaction | null>(null);
+  const [defaultType, setDefaultType] = useState<"masuk" | "keluar">("masuk");
+  const [filter, setFilter] = useState<"all" | "masuk" | "keluar">("all");
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [txRes, catRes] = await Promise.all([
+        fetch("/api/transactions"),
+        fetch("/api/categories"),
+      ]);
+      if (txRes.status === 401) {
+        router.push("/login");
+        return;
+      }
+      const txData = await txRes.json();
+      const catData = await catRes.json();
+      setTransactions(txData.transactions || []);
+      setSummary(txData.summary || { saldo: 0, totalMasuk: 0, totalKeluar: 0 });
+      setCategorySummary(txData.categorySummary || []);
+      setCategories(catData || []);
+    } catch {
+      toast.error("Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filteredTx = useMemo(
+    () =>
+      filter === "all"
+        ? transactions
+        : transactions.filter((t) => t.type === filter),
+    [transactions, filter]
+  );
+
+  const openModal = (type: "masuk" | "keluar", edit?: Transaction) => {
+    setDefaultType(type);
+    setEditData(edit || null);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Hapus transaksi ini?")) return;
+    const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Transaksi dihapus");
+      fetchData();
+    } else toast.error("Gagal menghapus");
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <header className="border-b bg-background">
+          <div className="mx-auto max-w-5xl px-4 py-4 flex justify-between">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+        </header>
+        <main className="mx-auto max-w-5xl px-4 py-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/30 pb-24 sm:pb-8">
+      <motion.header 
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <PiggyBank className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold sm:text-lg">
+                Aplikasi Nabung
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">
+                Halo, {userName}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex gap-2">
+              <Button size="sm" onClick={() => openModal("masuk")}>
+                <Plus className="h-4 w-4" />
+                Masuk
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openModal("keluar")}
+              >
+                <Minus className="h-4 w-4" />
+                Keluar
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="shrink-0"
+            >
+              <LogOut className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Keluar</span>
+            </Button>
+          </div>
+        </div>
+      </motion.header>
+
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-5 sm:px-6 sm:py-6">
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, staggerChildren: 0.1 }}
+          className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
+        >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+            <StatCard
+              title="Saldo saat ini"
+              value={formatRupiah(summary.saldo)}
+              icon={Wallet}
+              variant="default"
+            />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+            <StatCard
+              title="Total masuk"
+              value={formatRupiah(summary.totalMasuk)}
+              icon={ArrowDownLeft}
+              variant="success"
+            />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
+            <StatCard
+              title="Total keluar"
+              value={formatRupiah(summary.totalKeluar)}
+              icon={ArrowUpRight}
+              variant="destructive"
+            />
+          </motion.div>
+        </motion.section>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+        >
+          <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Rekap per kategori</CardTitle>
+            <CardDescription>
+              Ringkasan pemasukan dan pengeluaran tiap kategori
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {categorySummary.map((cat) => {
+              const net = cat.masuk - cat.keluar;
+              return (
+                <div
+                  key={cat.id}
+                  className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
+                >
+                  <span
+                    className="h-8 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{cat.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      +{formatRupiah(cat.masuk)} · −{formatRupiah(cat.keluar)}
+                    </p>
+                  </div>
+                  <p
+                    className={cn(
+                      "text-xs font-semibold tabular-nums",
+                      net >= 0 ? "text-emerald-600" : "text-destructive"
+                    )}
+                  >
+                    {net >= 0 ? "+" : "−"}
+                    {formatRupiah(Math.abs(net))}
+                  </p>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+        >
+        <Card className="shadow-sm overflow-hidden">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
+            <div>
+              <CardTitle className="text-base">Riwayat transaksi</CardTitle>
+              <CardDescription>
+                {filteredTx.length} transaksi
+                {filter !== "all" && ` · filter ${filter}`}
+              </CardDescription>
+            </div>
+            <Tabs
+              value={filter}
+              onValueChange={(v) => setFilter(v as typeof filter)}
+            >
+              <TabsList>
+                <TabsTrigger value="all">Semua</TabsTrigger>
+                <TabsTrigger value="masuk">Masuk</TabsTrigger>
+                <TabsTrigger value="keluar">Keluar</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            {filteredTx.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+                  <Wallet className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">Belum ada transaksi</p>
+                <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+                  Tambahkan saldo masuk atau keluar untuk mulai mencatat
+                  tabungan Anda
+                </p>
+                <Button
+                  className="mt-4"
+                  size="sm"
+                  onClick={() => openModal("masuk")}
+                >
+                  <Plus className="h-4 w-4" />
+                  Tambah transaksi
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/40 text-left text-muted-foreground">
+                        <th className="px-5 py-3 font-medium">Tanggal</th>
+                        <th className="px-5 py-3 font-medium">Kategori</th>
+                        <th className="px-5 py-3 font-medium">Keterangan</th>
+                        <th className="px-5 py-3 font-medium text-right">
+                          Jumlah
+                        </th>
+                        <th className="px-5 py-3 font-medium text-right w-28">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <AnimatePresence>
+                        {filteredTx.map((tx) => (
+                          <motion.tr
+                            key={tx.id}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                          >
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              {formatDate(tx.date)}
+                            </td>
+                            <td className="px-5 py-3">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span
+                                  className="h-2 w-2 rounded-full"
+                                  style={{ backgroundColor: tx.category.color }}
+                                />
+                                {tx.category.name}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3 text-muted-foreground max-w-[200px] truncate">
+                              {tx.description || "—"}
+                            </td>
+                            <td
+                              className={cn(
+                                "px-5 py-3 text-right font-semibold tabular-nums whitespace-nowrap",
+                                tx.type === "masuk"
+                                  ? "text-emerald-600"
+                                  : "text-destructive"
+                              )}
+                            >
+                              {tx.type === "masuk" ? "+" : "−"}
+                              {formatRupiah(tx.amount)}
+                            </td>
+                            <td className="px-5 py-3 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() =>
+                                    openModal(tx.type as "masuk" | "keluar", tx)
+                                  }
+                                  aria-label="Edit"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => handleDelete(tx.id)}
+                                  aria-label="Hapus"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </AnimatePresence>
+                    </tbody>
+                  </table>
+                </div>
+
+                <ul className="md:hidden divide-y">
+                  <AnimatePresence>
+                  {filteredTx.map((tx) => (
+                    <motion.li 
+                      key={tx.id} 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="px-4 py-3.5"
+                    >
+                      <div className="flex gap-3">
+                        <span
+                          className="mt-1 h-8 w-1 shrink-0 rounded-full"
+                          style={{ backgroundColor: tx.category.color }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="truncate text-sm font-medium">
+                                {tx.category.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatDate(tx.date)}
+                                {tx.description && ` · ${tx.description}`}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p
+                                className={cn(
+                                  "text-sm font-semibold tabular-nums",
+                                  tx.type === "masuk"
+                                    ? "text-emerald-600"
+                                    : "text-destructive"
+                                )}
+                              >
+                                {tx.type === "masuk" ? "+" : "−"}
+                                {formatRupiah(tx.amount)}
+                              </p>
+                              <Badge
+                                variant="outline"
+                                className="mt-1 text-[10px] capitalize"
+                              >
+                                {tx.type}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() =>
+                                openModal(tx.type as "masuk" | "keluar", tx)
+                              }
+                            >
+                              <Pencil className="h-3 w-3" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              className="text-destructive"
+                              onClick={() => handleDelete(tx.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Hapus
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.li>
+                  ))}
+                  </AnimatePresence>
+                </ul>
+              </>
+            )}
+          </CardContent>
+        </Card>
+        </motion.div>
+      </main>
+
+      <motion.div 
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/80 p-3 backdrop-blur-lg sm:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.04)]"
+      >
+        <div className="mx-auto flex max-w-lg gap-2">
+          <Button className="flex-1 rounded-xl h-12 shadow-sm" onClick={() => openModal("masuk")}>
+            <Plus className="h-5 w-5 mr-1" />
+            Masuk
+          </Button>
+          <Button
+            className="flex-1 rounded-xl h-12 shadow-sm bg-white"
+            variant="outline"
+            onClick={() => openModal("keluar")}
+          >
+            <Minus className="h-5 w-5 mr-1" />
+            Keluar
+          </Button>
+        </div>
+      </motion.div>
+
+      <TransactionModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditData(null);
+        }}
+        onSaved={fetchData}
+        categories={categories}
+        editData={editData}
+        defaultType={defaultType}
+      />
+    </div>
+  );
+}
+

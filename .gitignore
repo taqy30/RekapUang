@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+
+# Environment & secrets — JANGAN di-commit
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Izinkan template saja
+!.env.example
+
+*.db
+*.db-journal
+.DS_Store
+.vercel

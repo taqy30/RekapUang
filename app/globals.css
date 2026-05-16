@@ -1,0 +1,55 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    @apply font-sans;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  body {
+    @apply antialiased bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  :root {
+    --background: oklch(0.985 0.002 247);
+    --foreground: oklch(0.21 0.02 265);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.21 0.02 265);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.21 0.02 265);
+    --primary: oklch(0.508 0.118 165.612);
+    --primary-foreground: oklch(0.988 0.005 165);
+    --secondary: oklch(0.967 0.01 165);
+    --secondary-foreground: oklch(0.35 0.06 165);
+    --muted: oklch(0.965 0.005 265);
+    --muted-foreground: oklch(0.52 0.02 265);
+    --accent: oklch(0.967 0.02 165);
+    --accent-foreground: oklch(0.35 0.08 165);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.988 0.005 27);
+    --border: oklch(0.91 0.01 265);
+    --input: oklch(0.91 0.01 265);
+    --ring: oklch(0.508 0.118 165.612);
+    --radius: 0.75rem;
+    --chart-1: oklch(0.508 0.118 165.612);
+    --chart-2: oklch(0.627 0.194 149.214);
+    --chart-3: oklch(0.577 0.245 27.325);
+    --chart-4: oklch(0.7 0.15 250);
+    --chart-5: oklch(0.55 0.02 265);
+  }
+}
