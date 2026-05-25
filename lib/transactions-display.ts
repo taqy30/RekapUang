@@ -1,4 +1,7 @@
 import type { Transaction } from "@/components/TransactionModal";
+import { orderRecapAllRows } from "@/lib/fund-sources";
+
+export type RecapViewMode = "kategori" | "penyimpanan";
 
 export type PeriodMode = "harian" | "bulanan";
 export type TxTypeFilter = "all" | "masuk" | "keluar";
@@ -97,6 +100,7 @@ export function summarizeTransactions(transactions: Transaction[]) {
 export type CategoryPeriodRow = {
   id: string;
   name: string;
+  slug?: string;
   color: string;
   masuk: number;
   keluar: number;
@@ -151,4 +155,56 @@ export function summarizeByFundSource(
     const totalB = b.masuk + b.keluar;
     return totalB - totalA;
   });
+}
+
+type FundSourceOption = {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+};
+
+/** Rekap periode untuk semua tipe penyimpanan (urutan standar). */
+export function buildFundSourcePeriodRows(
+  transactions: Transaction[],
+  allFundSources: FundSourceOption[]
+): CategoryPeriodRow[] {
+  const summarized = summarizeByFundSource(transactions);
+  const byId = new Map(summarized.map((r) => [r.id, r]));
+
+  const rows = allFundSources.map((fs) => {
+    const sum = byId.get(fs.id);
+    return {
+      id: fs.id,
+      name: fs.name,
+      slug: fs.slug,
+      color: fs.color,
+      masuk: sum?.masuk ?? 0,
+      keluar: sum?.keluar ?? 0,
+    };
+  });
+
+  return orderRecapAllRows(rows);
+}
+
+export function formatRecapAmountLine(
+  row: CategoryPeriodRow,
+  typeFilter: TxTypeFilter
+): string {
+  if (typeFilter === "masuk") {
+    return `Masuk: ${formatRupiah(row.masuk)}`;
+  }
+  if (typeFilter === "keluar") {
+    return `Keluar: ${formatRupiah(row.keluar)}`;
+  }
+  return `+${formatRupiah(row.masuk)} · −${formatRupiah(row.keluar)}`;
+}
+
+export function recapRowNet(
+  row: CategoryPeriodRow,
+  typeFilter: TxTypeFilter
+): number {
+  if (typeFilter === "masuk") return row.masuk;
+  if (typeFilter === "keluar") return -row.keluar;
+  return row.masuk - row.keluar;
 }

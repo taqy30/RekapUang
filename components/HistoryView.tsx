@@ -32,17 +32,21 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   type PeriodMode,
+  type RecapViewMode,
   type TxTypeFilter,
+  buildFundSourcePeriodRows,
   currentMonthKey,
   filterTransactions,
   formatPeriodLabel,
+  formatRecapAmountLine,
   formatRupiah,
   formatTransactionDate,
+  recapRowNet,
   summarizeByCategory,
-  summarizeByFundSource,
   summarizeTransactions,
   todayDateKey,
 } from "@/lib/transactions-display";
+import type { FundSource } from "./TransactionModal";
 import type { DashboardData } from "@/lib/dashboard-data";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
@@ -66,6 +70,8 @@ export default function HistoryView({ userName }: HistoryViewProps) {
     searchParams.get("month") || currentMonthKey()
   );
   const [typeFilter, setTypeFilter] = useState<TxTypeFilter>("all");
+  const [recapView, setRecapView] = useState<RecapViewMode>("kategori");
+  const [fundSources, setFundSources] = useState<FundSource[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -76,6 +82,7 @@ export default function HistoryView({ userName }: HistoryViewProps) {
       }
       const data: DashboardData = await res.json();
       setTransactions(data.transactions as Transaction[]);
+      setFundSources(data.fundSources);
       setReady(true);
     } catch {
       toast.error("Gagal memuat data");
@@ -110,9 +117,24 @@ export default function HistoryView({ userName }: HistoryViewProps) {
   );
 
   const fundSourceRows = useMemo(
-    () => summarizeByFundSource(periodAll),
-    [periodAll]
+    () => buildFundSourcePeriodRows(periodAll, fundSources),
+    [periodAll, fundSources]
   );
+
+  const recapRowsBase =
+    recapView === "penyimpanan" ? fundSourceRows : categoryRows;
+
+  const recapRows = useMemo(() => {
+    if (typeFilter === "masuk") {
+      return recapRowsBase.filter((r) => r.masuk > 0);
+    }
+    if (typeFilter === "keluar") {
+      return recapRowsBase.filter((r) => r.keluar > 0);
+    }
+    return recapRowsBase.filter((r) => r.masuk > 0 || r.keluar > 0);
+  }, [recapRowsBase, typeFilter]);
+
+  const recapHasData = recapRows.length > 0;
 
   if (!ready) {
     return <DashboardLoadingScreen />;
@@ -258,89 +280,81 @@ export default function HistoryView({ userName }: HistoryViewProps) {
           </motion.div>
         </motion.section>
 
-        {categoryRows.length > 0 && (
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Rekap per kategori</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 space-y-3">
+            <div>
+              <CardTitle className="text-base">Rekap periode</CardTitle>
               <CardDescription>
-                Pemasukan & pengeluaran per kategori pada periode terpilih
+                {recapView === "penyimpanan"
+                  ? typeFilter === "keluar"
+                    ? "Pengeluaran per Cash, bank, dan e-wallet"
+                    : typeFilter === "masuk"
+                      ? "Pemasukan per tipe penyimpanan"
+                      : "Masuk & keluar per Cash, BCA, Seabank, dan lainnya"
+                  : "Pemasukan & pengeluaran per kategori transaksi"}
               </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2">
-              {categoryRows.map((cat) => {
-                const net = cat.masuk - cat.keluar;
-                return (
-                  <div
-                    key={cat.id}
-                    className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
-                  >
-                    <span
-                      className="h-8 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: cat.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{cat.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        +{formatRupiah(cat.masuk)} · −{formatRupiah(cat.keluar)}
+            </div>
+            <Tabs
+              value={recapView}
+              onValueChange={(v) => setRecapView(v as RecapViewMode)}
+            >
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="kategori">Per kategori</TabsTrigger>
+                <TabsTrigger value="penyimpanan">Per tipe penyimpanan</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            {!recapHasData ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Belum ada transaksi untuk rekap pada periode ini.
+              </p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {recapRows.map((row) => {
+                  const net = recapRowNet(row, typeFilter);
+                  return (
+                    <div
+                      key={row.id}
+                      className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
+                    >
+                      <span
+                        className="h-8 w-1 shrink-0 rounded-full"
+                        style={{ backgroundColor: row.color }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {row.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRecapAmountLine(row, typeFilter)}
+                        </p>
+                      </div>
+                      <p
+                        className={cn(
+                          "text-xs font-semibold tabular-nums",
+                          typeFilter === "keluar"
+                            ? "text-destructive"
+                            : typeFilter === "masuk"
+                              ? "text-emerald-600"
+                              : net >= 0
+                                ? "text-emerald-600"
+                                : "text-destructive"
+                        )}
+                      >
+                        {typeFilter === "keluar"
+                          ? `−${formatRupiah(row.keluar)}`
+                          : typeFilter === "masuk"
+                            ? `+${formatRupiah(row.masuk)}`
+                            : `${net >= 0 ? "+" : "−"}${formatRupiah(Math.abs(net))}`}
                       </p>
                     </div>
-                    <p
-                      className={cn(
-                        "text-xs font-semibold tabular-nums",
-                        net >= 0 ? "text-emerald-600" : "text-destructive"
-                      )}
-                    >
-                      {net >= 0 ? "+" : "−"}
-                      {formatRupiah(Math.abs(net))}
-                    </p>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
-
-        {fundSourceRows.length > 0 && (
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
-              <CardDescription>
-                Cash, bank, dan e-wallet pada periode terpilih
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2">
-              {fundSourceRows.map((src) => {
-                const net = src.masuk - src.keluar;
-                return (
-                  <div
-                    key={src.id}
-                    className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
-                  >
-                    <span
-                      className="h-8 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: src.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{src.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        +{formatRupiah(src.masuk)} · −{formatRupiah(src.keluar)}
-                      </p>
-                    </div>
-                    <p
-                      className={cn(
-                        "text-xs font-semibold tabular-nums",
-                        net >= 0 ? "text-emerald-600" : "text-destructive"
-                      )}
-                    >
-                      {net >= 0 ? "+" : "−"}
-                      {formatRupiah(Math.abs(net))}
-                    </p>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <motion.div variants={staggerItem} initial="initial" animate="animate">
         <Card className="shadow-sm overflow-hidden">
