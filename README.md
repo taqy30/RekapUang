@@ -6,10 +6,11 @@ Aplikasi web rekapitulasi pemasukan & pengeluaran dengan login + OTP email, kate
 
 - **Register dengan OTP** — kode 6 digit dikirim ke email, masa berlaku 10 menit
 - **Login & Logout** dengan rate limiting
-- **Saldo Masuk / Keluar** dengan kategori
+- **Saldo Masuk / Keluar** dengan **kategori** (jenis transaksi) dan **tipe penyimpanan** (Cash, bank, e-wallet — tabel `FundSource` terpisah)
 - **Edit & Hapus** transaksi
 - **Kategori bawaan**: Kebutuhan Darurat, Biaya Hidup, Tabungan, Investasi, Hiburan, Lainnya
-- **Rekap**: saldo, total masuk/keluar, ringkasan per kategori
+- **Tipe penyimpanan bawaan**: Cash, BCA, Seabank, Mandiri, BRI, BNI, BSI, Dana, GoPay, ShopeePay, OVO (dashboard rekap: 6 utama + Selengkapnya)
+- **Rekap**: saldo, total masuk/keluar, ringkasan per kategori & per tipe penyimpanan
 - **Responsif** — desktop tampil tabel, mobile tampil kartu + FAB bawah
 - **Toast notifications** untuk feedback aksi
 - **Database PostgreSQL** via Prisma + Supabase
@@ -46,12 +47,18 @@ DIRECT_URL="postgresql://postgres.[REF]:[PASSWORD]@....pooler.supabase.com:5432/
 JWT_SECRET="string-acak-minimal-32-karakter"
 ```
 
-### 3. Buat tabel & seed kategori
+### 3. Buat tabel & seed (Supabase)
+
+Sinkronkan schema Prisma ke PostgreSQL Supabase, lalu seed kategori + tipe penyimpanan:
 
 ```bash
 npm run db:push
 npm run db:seed
 ```
+
+Tabel `FundSource` = **tipe penyimpanan** (Cash, bank, e-wallet). Tabel `Category` = jenis transaksi (Biaya Hidup, Tabungan, dll.).
+
+**Repository:** [github.com/taqy30/RekapUang](https://github.com/taqy30/RekapUang)
 
 ### 4. Konfigurasi email SMTP (opsional di dev)
 

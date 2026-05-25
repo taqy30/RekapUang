@@ -53,6 +53,7 @@ export const transactionSchema = z.object({
     .max(999_999_999_999, "Jumlah terlalu besar")
     .finite(),
   categoryId: z.string().min(1, "Kategori wajib dipilih").max(50),
+  fundSourceId: z.string().min(1, "Tipe penyimpanan wajib dipilih").max(50),
   description: z
     .string()
     .trim()

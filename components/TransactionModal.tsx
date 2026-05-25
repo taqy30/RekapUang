@@ -19,12 +19,28 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_FUND_SOURCE_SLUG,
+  STORAGE_KIND_LABELS,
+  STORAGE_KIND_ORDER,
+  getStorageKindBySlug,
+  type StorageKind,
+} from "@/lib/fund-sources";
 
 export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+};
+
+export type FundSource = {
   id: string;
   name: string;
   slug: string;
@@ -39,7 +55,9 @@ export type Transaction = {
   date: string;
   createdAt: string;
   categoryId: string;
+  fundSourceId: string | null;
   category: Category;
+  fundSource: FundSource | null;
 };
 
 type Props = {
@@ -47,21 +65,142 @@ type Props = {
   onClose: () => void;
   onSaved: () => void;
   categories: Category[];
+  fundSources: FundSource[];
   editData?: Transaction | null;
   defaultType?: "masuk" | "keluar";
 };
+
+function CategorySelect({
+  value,
+  onValueChange,
+  options,
+  selected,
+}: {
+  value: string;
+  onValueChange: (v: string) => void;
+  options: { id: string; name: string; color: string }[];
+  selected?: { name: string; color: string };
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>Kategori</Label>
+      <Select value={value} onValueChange={(v) => onValueChange(v as string)}>
+        <SelectTrigger className="w-full h-10">
+          {selected ? (
+            <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: selected.color }}
+              />
+              {selected.name}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Pilih kategori</span>
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt.id} value={opt.id} label={opt.name}>
+              <span className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: opt.color }}
+                />
+                {opt.name}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function StorageTypeSelect({
+  value,
+  onValueChange,
+  options,
+  selected,
+}: {
+  value: string;
+  onValueChange: (v: string) => void;
+  options: FundSource[];
+  selected?: FundSource;
+}) {
+  const byKind = useMemo(() => {
+    const map = new Map<StorageKind, FundSource[]>();
+    for (const kind of STORAGE_KIND_ORDER) {
+      map.set(kind, []);
+    }
+    for (const opt of options) {
+      const kind = getStorageKindBySlug(opt.slug);
+      map.get(kind)?.push(opt);
+    }
+    return map;
+  }, [options]);
+
+  return (
+    <div className="space-y-2">
+      <Label>Tipe penyimpanan</Label>
+      <p className="text-xs text-muted-foreground -mt-1">
+        Uang disimpan di mana: Cash, rekening bank, atau e-wallet
+      </p>
+      <Select value={value} onValueChange={(v) => onValueChange(v as string)}>
+        <SelectTrigger className="w-full h-10">
+          {selected ? (
+            <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: selected.color }}
+              />
+              {selected.name}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              Pilih Cash / bank / e-wallet
+            </span>
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {STORAGE_KIND_ORDER.map((kind) => {
+            const items = byKind.get(kind) ?? [];
+            if (items.length === 0) return null;
+            return (
+              <SelectGroup key={kind}>
+                <SelectLabel>{STORAGE_KIND_LABELS[kind]}</SelectLabel>
+                {items.map((opt) => (
+                  <SelectItem key={opt.id} value={opt.id} label={opt.name}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: opt.color }}
+                      />
+                      {opt.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 export default function TransactionModal({
   open,
   onClose,
   onSaved,
   categories,
+  fundSources,
   editData,
   defaultType = "masuk",
 }: Props) {
   const [type, setType] = useState<"masuk" | "keluar">(defaultType);
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [fundSourceId, setFundSourceId] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [error, setError] = useState("");
@@ -73,21 +212,31 @@ export default function TransactionModal({
       setType(editData.type as "masuk" | "keluar");
       setAmount(String(editData.amount));
       setCategoryId(editData.categoryId);
+      setFundSourceId(editData.fundSourceId || "");
       setDescription(editData.description || "");
       setDate(editData.date.split("T")[0]);
     } else {
       setType(defaultType);
       setAmount("");
       setCategoryId(categories[0]?.id || "");
+      const defaultFund =
+        fundSources.find((f) => f.slug === DEFAULT_FUND_SOURCE_SLUG) ??
+        fundSources[0];
+      setFundSourceId(defaultFund?.id || "");
       setDescription("");
       setDate(new Date().toISOString().split("T")[0]);
     }
     setError("");
-  }, [open, editData, defaultType, categories]);
+  }, [open, editData, defaultType, categories, fundSources]);
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.id === categoryId),
     [categories, categoryId]
+  );
+
+  const selectedFundSource = useMemo(
+    () => fundSources.find((f) => f.id === fundSourceId),
+    [fundSources, fundSourceId]
   );
 
   const submit = async (e: React.FormEvent) => {
@@ -96,6 +245,10 @@ export default function TransactionModal({
     const num = parseFloat(amount);
     if (!num || num <= 0) {
       setError("Jumlah harus lebih dari 0");
+      return;
+    }
+    if (!fundSourceId) {
+      setError("Tipe penyimpanan wajib dipilih");
       return;
     }
     setLoading(true);
@@ -110,6 +263,7 @@ export default function TransactionModal({
           type,
           amount: num,
           categoryId,
+          fundSourceId,
           description,
           date,
         }),
@@ -137,7 +291,7 @@ export default function TransactionModal({
             {editData ? "Edit transaksi" : "Tambah transaksi"}
           </DialogTitle>
           <DialogDescription>
-            Catat saldo masuk atau keluar dengan kategori
+            Pilih kategori transaksi dan tipe penyimpanan (Cash, bank, e-wallet)
           </DialogDescription>
         </DialogHeader>
 
@@ -167,40 +321,19 @@ export default function TransactionModal({
             <CurrencyInput value={amount} onChange={setAmount} required />
           </div>
 
-          <div className="space-y-2">
-            <Label>Kategori</Label>
-            <Select
-              value={categoryId}
-              onValueChange={(v) => setCategoryId(v as string)}
-            >
-              <SelectTrigger className="w-full h-10">
-                {selectedCategory ? (
-                  <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: selectedCategory.color }}
-                    />
-                    {selectedCategory.name}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">Pilih kategori</span>
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id} label={cat.name}>
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      {cat.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CategorySelect
+            value={categoryId}
+            onValueChange={setCategoryId}
+            options={categories}
+            selected={selectedCategory}
+          />
+
+          <StorageTypeSelect
+            value={fundSourceId}
+            onValueChange={setFundSourceId}
+            options={fundSources}
+            selected={selectedFundSource}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="tx-date">Tanggal</Label>

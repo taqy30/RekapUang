@@ -39,6 +39,7 @@ import {
   formatRupiah,
   formatTransactionDate,
   summarizeByCategory,
+  summarizeByFundSource,
   summarizeTransactions,
   todayDateKey,
 } from "@/lib/transactions-display";
@@ -105,6 +106,11 @@ export default function HistoryView({ userName }: HistoryViewProps) {
 
   const categoryRows = useMemo(
     () => summarizeByCategory(periodAll),
+    [periodAll]
+  );
+
+  const fundSourceRows = useMemo(
+    () => summarizeByFundSource(periodAll),
     [periodAll]
   );
 
@@ -257,7 +263,7 @@ export default function HistoryView({ userName }: HistoryViewProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Rekap per kategori</CardTitle>
               <CardDescription>
-                Pemasukan & pengeluaran pada periode terpilih
+                Pemasukan & pengeluaran per kategori pada periode terpilih
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2 sm:grid-cols-2">
@@ -276,6 +282,48 @@ export default function HistoryView({ userName }: HistoryViewProps) {
                       <p className="truncate text-sm font-medium">{cat.name}</p>
                       <p className="text-xs text-muted-foreground">
                         +{formatRupiah(cat.masuk)} · −{formatRupiah(cat.keluar)}
+                      </p>
+                    </div>
+                    <p
+                      className={cn(
+                        "text-xs font-semibold tabular-nums",
+                        net >= 0 ? "text-emerald-600" : "text-destructive"
+                      )}
+                    >
+                      {net >= 0 ? "+" : "−"}
+                      {formatRupiah(Math.abs(net))}
+                    </p>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {fundSourceRows.length > 0 && (
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
+              <CardDescription>
+                Cash, bank, dan e-wallet pada periode terpilih
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-2 sm:grid-cols-2">
+              {fundSourceRows.map((src) => {
+                const net = src.masuk - src.keluar;
+                return (
+                  <div
+                    key={src.id}
+                    className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
+                  >
+                    <span
+                      className="h-8 w-1 shrink-0 rounded-full"
+                      style={{ backgroundColor: src.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{src.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        +{formatRupiah(src.masuk)} · −{formatRupiah(src.keluar)}
                       </p>
                     </div>
                     <p
@@ -359,6 +407,12 @@ export default function HistoryView({ userName }: HistoryViewProps) {
                           <div>
                             <p className="text-sm font-medium">
                               {tx.category.name}
+                              {tx.fundSource && (
+                                <span className="text-muted-foreground font-normal">
+                                  {" "}
+                                  · {tx.fundSource.name}
+                                </span>
+                              )}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {formatTransactionDate(tx.date)}

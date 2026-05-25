@@ -126,3 +126,29 @@ export function summarizeByCategory(
     return totalB - totalA;
   });
 }
+
+export function summarizeByFundSource(
+  transactions: Transaction[]
+): CategoryPeriodRow[] {
+  const map = new Map<string, CategoryPeriodRow>();
+
+  for (const tx of transactions) {
+    if (!tx.fundSourceId || !tx.fundSource) continue;
+    const existing = map.get(tx.fundSourceId) ?? {
+      id: tx.fundSource.id,
+      name: tx.fundSource.name,
+      color: tx.fundSource.color,
+      masuk: 0,
+      keluar: 0,
+    };
+    if (tx.type === "masuk") existing.masuk += tx.amount;
+    else existing.keluar += tx.amount;
+    map.set(tx.fundSourceId, existing);
+  }
+
+  return [...map.values()].sort((a, b) => {
+    const totalA = a.masuk + a.keluar;
+    const totalB = b.masuk + b.keluar;
+    return totalB - totalA;
+  });
+}

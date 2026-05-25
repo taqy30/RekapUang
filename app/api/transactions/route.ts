@@ -39,16 +39,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { type, amount, categoryId, description, date } = parsed.data;
+  const { type, amount, categoryId, fundSourceId, description, date } =
+    parsed.data;
 
   try {
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-      select: { id: true },
-    });
+    const [category, fundSource] = await Promise.all([
+      prisma.category.findUnique({
+        where: { id: categoryId },
+        select: { id: true },
+      }),
+      prisma.fundSource.findUnique({
+        where: { id: fundSourceId },
+        select: { id: true },
+      }),
+    ]);
     if (!category) {
       return NextResponse.json(
         { error: "Kategori tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+    if (!fundSource) {
+      return NextResponse.json(
+        { error: "Tipe penyimpanan tidak ditemukan" },
         { status: 404 }
       );
     }
@@ -57,12 +70,13 @@ export async function POST(request: Request) {
       data: {
         userId: session.userId,
         categoryId,
+        fundSourceId,
         type,
         amount,
         description: description || null,
         date: parseTransactionDate(date),
       },
-      include: { category: true },
+      include: { category: true, fundSource: true },
     });
 
     return NextResponse.json(transaction, { status: 201 });

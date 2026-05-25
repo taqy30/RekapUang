@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import TransactionModal, {
   type Category,
+  type FundSource,
   type Transaction,
 } from "./TransactionModal";
 import DashboardLoadingScreen from "./DashboardLoadingScreen";
@@ -40,6 +41,10 @@ import {
   sortTransactionsNewestFirst,
 } from "@/lib/transactions-display";
 import type { DashboardData } from "@/lib/dashboard-data";
+import {
+  orderRecapAllRows,
+  pickRecapPreviewRows,
+} from "@/lib/fund-sources";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
 type Summary = {
@@ -48,7 +53,7 @@ type Summary = {
   totalKeluar: number;
 };
 
-type CategorySummary = {
+type RecapRow = {
   id: string;
   name: string;
   slug: string;
@@ -56,6 +61,85 @@ type CategorySummary = {
   masuk: number;
   keluar: number;
 };
+
+function RecapGrid({ rows }: { rows: RecapRow[] }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {rows.map((row) => (
+        <RecapRowItem key={row.id} row={row} />
+      ))}
+    </div>
+  );
+}
+
+function RecapRowItem({ row }: { row: RecapRow }) {
+  const net = row.masuk - row.keluar;
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
+      <span
+        className="h-8 w-1 shrink-0 rounded-full"
+        style={{ backgroundColor: row.color }}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{row.name}</p>
+        <p className="text-xs text-muted-foreground">
+          +{formatRupiah(row.masuk)} · −{formatRupiah(row.keluar)}
+        </p>
+      </div>
+      <p
+        className={cn(
+          "text-xs font-semibold tabular-nums",
+          net >= 0 ? "text-emerald-600" : "text-destructive"
+        )}
+      >
+        {net >= 0 ? "+" : "−"}
+        {formatRupiah(Math.abs(net))}
+      </p>
+    </div>
+  );
+}
+
+function CollapsibleRecapGrid({ rows }: { rows: RecapRow[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const previewRows = useMemo(() => pickRecapPreviewRows(rows), [rows]);
+  const allRows = useMemo(() => orderRecapAllRows(rows), [rows]);
+
+  const visible = expanded ? allRows : previewRows;
+  const hasMore = allRows.length > previewRows.length;
+  const hiddenCount = allRows.length - previewRows.length;
+
+  if (allRows.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground py-2">
+        Belum ada data tipe penyimpanan.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {visible.map((row) => (
+          <RecapRowItem key={row.id} row={row} />
+        ))}
+      </div>
+      {hasMore && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full text-muted-foreground"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded
+            ? "Tampilkan lebih sedikit"
+            : `Selengkapnya (${hiddenCount} bank & e-wallet lainnya)`}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 function StatCard({
   title,
@@ -113,12 +197,14 @@ export default function Dashboard({ userName }: DashboardProps) {
   const [ready, setReady] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [fundSources, setFundSources] = useState<FundSource[]>([]);
   const [summary, setSummary] = useState<Summary>({
     saldo: 0,
     totalMasuk: 0,
     totalKeluar: 0,
   });
-  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
+  const [categorySummary, setCategorySummary] = useState<RecapRow[]>([]);
+  const [fundSourceSummary, setFundSourceSummary] = useState<RecapRow[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState<Transaction | null>(null);
   const [defaultType, setDefaultType] = useState<"masuk" | "keluar">("masuk");
@@ -135,7 +221,9 @@ export default function Dashboard({ userName }: DashboardProps) {
       setTransactions(data.transactions as Transaction[]);
       setSummary(data.summary);
       setCategorySummary(data.categorySummary);
+      setFundSourceSummary(data.fundSourceSummary);
       setCategories(data.categories);
+      setFundSources(data.fundSources);
       setReady(true);
     } catch {
       toast.error("Gagal memuat data");
@@ -278,36 +366,23 @@ export default function Dashboard({ userName }: DashboardProps) {
               Ringkasan pemasukan dan pengeluaran tiap kategori
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-2">
-            {categorySummary.map((cat) => {
-              const net = cat.masuk - cat.keluar;
-              return (
-                <div
-                  key={cat.id}
-                  className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
-                >
-                  <span
-                    className="h-8 w-1 shrink-0 rounded-full"
-                    style={{ backgroundColor: cat.color }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{cat.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      +{formatRupiah(cat.masuk)} · −{formatRupiah(cat.keluar)}
-                    </p>
-                  </div>
-                  <p
-                    className={cn(
-                      "text-xs font-semibold tabular-nums",
-                      net >= 0 ? "text-emerald-600" : "text-destructive"
-                    )}
-                  >
-                    {net >= 0 ? "+" : "−"}
-                    {formatRupiah(Math.abs(net))}
-                  </p>
-                </div>
-              );
-            })}
+          <CardContent>
+            <RecapGrid rows={categorySummary} />
+          </CardContent>
+        </Card>
+        </motion.div>
+
+        <motion.div variants={staggerItem} initial="initial" animate="animate">
+          <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
+            <CardDescription>
+              Cash, BCA, Seabank, Mandiri, ShopeePay, GoPay — klik Selengkapnya
+              untuk semua bank & e-wallet
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CollapsibleRecapGrid rows={fundSourceSummary} />
           </CardContent>
         </Card>
         </motion.div>
@@ -379,6 +454,7 @@ export default function Dashboard({ userName }: DashboardProps) {
                       <tr className="border-b bg-muted/40 text-left text-muted-foreground">
                         <th className="px-5 py-3 font-medium">Tanggal</th>
                         <th className="px-5 py-3 font-medium">Kategori</th>
+                        <th className="px-5 py-3 font-medium">Tipe penyimpanan</th>
                         <th className="px-5 py-3 font-medium">Keterangan</th>
                         <th className="px-5 py-3 font-medium text-right">
                           Jumlah
@@ -405,6 +481,21 @@ export default function Dashboard({ userName }: DashboardProps) {
                                 />
                                 {tx.category.name}
                               </span>
+                            </td>
+                            <td className="px-5 py-3">
+                              {tx.fundSource ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      backgroundColor: tx.fundSource.color,
+                                    }}
+                                  />
+                                  {tx.fundSource.name}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-3 text-muted-foreground max-w-[200px] truncate">
                               {tx.description || "—"}
@@ -465,6 +556,12 @@ export default function Dashboard({ userName }: DashboardProps) {
                             <div>
                               <p className="truncate text-sm font-medium">
                                 {tx.category.name}
+                                {tx.fundSource && (
+                                  <span className="text-muted-foreground font-normal">
+                                    {" "}
+                                    · {tx.fundSource.name}
+                                  </span>
+                                )}
                               </p>
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {formatTransactionDate(tx.date)}
@@ -551,6 +648,7 @@ export default function Dashboard({ userName }: DashboardProps) {
         }}
         onSaved={fetchData}
         categories={categories}
+        fundSources={fundSources}
         editData={editData}
         defaultType={defaultType}
       />

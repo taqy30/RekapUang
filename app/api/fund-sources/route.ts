@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { sortFundSources } from "@/lib/fund-sources";
 
 export async function GET() {
   const session = await getSession();
@@ -8,10 +9,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
+  const fundSources = await prisma.fundSource.findMany({
     select: { id: true, name: true, slug: true, color: true },
   });
 
-  return NextResponse.json(categories);
+  return NextResponse.json(sortFundSources(fundSources));
 }
