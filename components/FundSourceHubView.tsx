@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronRight, Wallet } from "lucide-react";
+import { ArrowLeft, Wallet } from "lucide-react";
 import DashboardLoadingScreen from "./DashboardLoadingScreen";
 import AppFooter from "./AppFooter";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,8 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { formatRupiah } from "@/lib/transactions-display";
+import FundStorageListItem from "./FundStorageListItem";
 import type { FundSourceSummary } from "@/lib/fund-source-detail";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
@@ -104,35 +103,13 @@ export default function FundSourceHubView({ userName }: FundSourceHubViewProps) 
             >
               {items.map((item) => (
                 <motion.div key={item.id} variants={staggerItem}>
-                  <Link
+                  <FundStorageListItem
+                    slug={item.slug}
+                    name={item.name}
+                    masuk={item.masuk}
+                    keluar={item.keluar}
                     href={`/dashboard/penyimpanan/${item.slug}`}
-                    className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-3 transition-colors hover:bg-muted/60"
-                  >
-                    <span
-                      className="h-10 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        +{formatRupiah(item.masuk)} · −{formatRupiah(item.keluar)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <p
-                        className={cn(
-                          "text-sm font-semibold tabular-nums",
-                          item.saldo >= 0
-                            ? "text-emerald-600"
-                            : "text-destructive"
-                        )}
-                      >
-                        {item.saldo >= 0 ? "+" : "−"}
-                        {formatRupiah(Math.abs(item.saldo))}
-                      </p>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </Link>
+                  />
                 </motion.div>
               ))}
             </motion.div>

@@ -41,6 +41,7 @@ import {
   todayDateKey,
 } from "@/lib/transactions-display";
 import type { FundSourceDetailData } from "@/lib/fund-source-detail";
+import FundSourceIcon, { FUND_ICON } from "./FundSourceIcon";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
 type FundSourceDetailViewProps = {
@@ -149,15 +150,7 @@ export default function FundSourceDetailView({
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: `${fundSourceColor}22` }}
-            >
-              <span
-                className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: fundSourceColor }}
-              />
-            </div>
+            <FundSourceIcon slug={slug} size={FUND_ICON.header} />
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold sm:text-lg">
                 {fundSourceName}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import CurrencyInput from "./CurrencyInput";
+import FundSourceIcon, { FUND_ICON } from "./FundSourceIcon";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -149,10 +150,7 @@ function StorageTypeSelect({
         <SelectTrigger className="w-full h-10">
           {selected ? (
             <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-left">
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: selected.color }}
-              />
+              <FundSourceIcon slug={selected.slug} size={FUND_ICON.select} />
               {selected.name}
             </span>
           ) : (
@@ -171,10 +169,7 @@ function StorageTypeSelect({
                 {items.map((opt) => (
                   <SelectItem key={opt.id} value={opt.id} label={opt.name}>
                     <span className="flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0"
-                        style={{ backgroundColor: opt.color }}
-                      />
+                      <FundSourceIcon slug={opt.slug} size={FUND_ICON.table} />
                       {opt.name}
                     </span>
                   </SelectItem>

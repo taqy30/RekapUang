@@ -22,6 +22,8 @@ import TransactionModal, {
   type FundSource,
   type Transaction,
 } from "./TransactionModal";
+import FundSourceIcon, { FUND_ICON } from "./FundSourceIcon";
+import FundStorageListItem from "./FundStorageListItem";
 import DashboardLoadingScreen from "./DashboardLoadingScreen";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -76,11 +78,26 @@ function RecapGrid({ rows }: { rows: RecapRow[] }) {
 function RecapRowItem({
   row,
   href,
+  variant = "category",
 }: {
   row: RecapRow;
   href?: string;
+  variant?: "category" | "fund";
 }) {
   const net = row.masuk - row.keluar;
+
+  if (variant === "fund") {
+    return (
+      <FundStorageListItem
+        slug={row.slug}
+        name={row.name}
+        masuk={row.masuk}
+        keluar={row.keluar}
+        href={href}
+      />
+    );
+  }
+
   const inner = (
     <>
       <span
@@ -89,35 +106,21 @@ function RecapRowItem({
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{row.name}</p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground tabular-nums">
           +{formatRupiah(row.masuk)} · −{formatRupiah(row.keluar)}
         </p>
       </div>
       <p
         className={cn(
-          "text-xs font-semibold tabular-nums",
+          "shrink-0 text-xs font-semibold tabular-nums whitespace-nowrap",
           net >= 0 ? "text-emerald-600" : "text-destructive"
         )}
       >
         {net >= 0 ? "+" : "−"}
         {formatRupiah(Math.abs(net))}
       </p>
-      {href && (
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
     </>
   );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60"
-      >
-        {inner}
-      </Link>
-    );
-  }
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
@@ -151,6 +154,7 @@ function CollapsibleRecapGrid({ rows }: { rows: RecapRow[] }) {
           <RecapRowItem
             key={row.id}
             row={row}
+            variant="fund"
             href={`/dashboard/penyimpanan/${row.slug}`}
           />
         ))}
@@ -526,12 +530,10 @@ export default function Dashboard({ userName }: DashboardProps) {
                             </td>
                             <td className="px-5 py-3">
                               {tx.fundSource ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span
-                                    className="h-2 w-2 rounded-full"
-                                    style={{
-                                      backgroundColor: tx.fundSource.color,
-                                    }}
+                                <span className="inline-flex items-center gap-2">
+                                  <FundSourceIcon
+                                    slug={tx.fundSource.slug}
+                                    size={FUND_ICON.table}
                                   />
                                   {tx.fundSource.name}
                                 </span>
@@ -598,13 +600,16 @@ export default function Dashboard({ userName }: DashboardProps) {
                             <div>
                               <p className="truncate text-sm font-medium">
                                 {tx.category.name}
-                                {tx.fundSource && (
-                                  <span className="text-muted-foreground font-normal">
-                                    {" "}
-                                    · {tx.fundSource.name}
-                                  </span>
-                                )}
                               </p>
+                              {tx.fundSource && (
+                                <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <FundSourceIcon
+                                    slug={tx.fundSource.slug}
+                                    size={FUND_ICON.inline}
+                                  />
+                                  {tx.fundSource.name}
+                                </span>
+                              )}
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {formatTransactionDate(tx.date)}
                                 {tx.description && ` · ${tx.description}`}
