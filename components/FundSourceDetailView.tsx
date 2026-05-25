@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
@@ -13,7 +12,6 @@ import {
   CalendarDays,
   CalendarRange,
   Wallet,
-  ChevronRight,
 } from "lucide-react";
 import type { Transaction } from "./TransactionModal";
 import DashboardLoadingScreen from "./DashboardLoadingScreen";
@@ -33,63 +31,68 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   type PeriodMode,
-  type RecapViewMode,
   type TxTypeFilter,
-  buildFundSourcePeriodRows,
   currentMonthKey,
   filterTransactions,
   formatPeriodLabel,
-  formatRecapAmountLine,
   formatRupiah,
   formatTransactionDate,
-  recapRowNet,
-  summarizeByCategory,
   summarizeTransactions,
   todayDateKey,
 } from "@/lib/transactions-display";
-import type { FundSource } from "./TransactionModal";
-import type { DashboardData } from "@/lib/dashboard-data";
+import type { FundSourceDetailData } from "@/lib/fund-source-detail";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 
-type HistoryViewProps = {
+type FundSourceDetailViewProps = {
   userName: string;
+  slug: string;
 };
 
-export default function HistoryView({ userName }: HistoryViewProps) {
+export default function FundSourceDetailView({
+  userName,
+  slug,
+}: FundSourceDetailViewProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
   const [ready, setReady] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [fundSourceName, setFundSourceName] = useState("");
+  const [fundSourceColor, setFundSourceColor] = useState("#64748b");
+  const [allTimeSummary, setAllTimeSummary] = useState({
+    saldo: 0,
+    totalMasuk: 0,
+    totalKeluar: 0,
+  });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [periodMode, setPeriodMode] = useState<PeriodMode>(
-    (searchParams.get("mode") as PeriodMode) === "bulanan" ? "bulanan" : "harian"
-  );
-  const [selectedDate, setSelectedDate] = useState(
-    searchParams.get("date") || todayDateKey()
-  );
-  const [selectedMonth, setSelectedMonth] = useState(
-    searchParams.get("month") || currentMonthKey()
-  );
+  const [periodMode, setPeriodMode] = useState<PeriodMode>("harian");
+  const [selectedDate, setSelectedDate] = useState(todayDateKey());
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
   const [typeFilter, setTypeFilter] = useState<TxTypeFilter>("all");
-  const [recapView, setRecapView] = useState<RecapViewMode>("kategori");
-  const [fundSources, setFundSources] = useState<FundSource[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/transactions", { cache: "no-store" });
+      const res = await fetch(`/api/fund-sources/${slug}`, {
+        cache: "no-store",
+      });
       if (res.status === 401) {
         router.push("/login");
         return;
       }
-      const data: DashboardData = await res.json();
+      if (res.status === 404) {
+        setNotFound(true);
+        setReady(true);
+        return;
+      }
+      const data: FundSourceDetailData = await res.json();
+      setFundSourceName(data.fundSource.name);
+      setFundSourceColor(data.fundSource.color);
+      setAllTimeSummary(data.summary);
       setTransactions(data.transactions as Transaction[]);
-      setFundSources(data.fundSources);
       setReady(true);
     } catch {
       toast.error("Gagal memuat data");
       setReady(true);
     }
-  }, [router]);
+  }, [router, slug]);
 
   useEffect(() => {
     fetchData();
@@ -107,38 +110,26 @@ export default function HistoryView({ userName }: HistoryViewProps) {
     [transactions, periodMode, periodValue, typeFilter]
   );
 
-  const summary = useMemo(
+  const periodSummary = useMemo(
     () => summarizeTransactions(periodAll),
     [periodAll]
   );
 
-  const categoryRows = useMemo(
-    () => summarizeByCategory(periodAll),
-    [periodAll]
-  );
-
-  const fundSourceRows = useMemo(
-    () => buildFundSourcePeriodRows(periodAll, fundSources),
-    [periodAll, fundSources]
-  );
-
-  const recapRowsBase =
-    recapView === "penyimpanan" ? fundSourceRows : categoryRows;
-
-  const recapRows = useMemo(() => {
-    if (typeFilter === "masuk") {
-      return recapRowsBase.filter((r) => r.masuk > 0);
-    }
-    if (typeFilter === "keluar") {
-      return recapRowsBase.filter((r) => r.keluar > 0);
-    }
-    return recapRowsBase.filter((r) => r.masuk > 0 || r.keluar > 0);
-  }, [recapRowsBase, typeFilter]);
-
-  const recapHasData = recapRows.length > 0;
-
   if (!ready) {
     return <DashboardLoadingScreen />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center gap-4 px-4">
+        <p className="text-sm text-muted-foreground">
+          Tipe penyimpanan tidak ditemukan.
+        </p>
+        <Link href="/dashboard/penyimpanan" className={buttonVariants()}>
+          Kembali ke daftar
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -151,19 +142,25 @@ export default function HistoryView({ userName }: HistoryViewProps) {
       >
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link
-            href="/dashboard"
-            aria-label="Kembali ke dashboard"
+            href="/dashboard/penyimpanan"
+            aria-label="Kembali ke daftar penyimpanan"
             className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Wallet className="h-5 w-5" />
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${fundSourceColor}22` }}
+            >
+              <span
+                className="h-3 w-3 rounded-full"
+                style={{ backgroundColor: fundSourceColor }}
+              />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold sm:text-lg">
-                Riwayat detail
+                {fundSourceName}
               </h1>
               <p className="truncate text-xs text-muted-foreground">
                 Halo, {userName}
@@ -174,16 +171,32 @@ export default function HistoryView({ userName }: HistoryViewProps) {
       </motion.header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-5 px-4 py-5 sm:px-6 sm:py-6">
-        <motion.div
-          variants={staggerItem}
-          initial="initial"
-          animate="animate"
-        >
+        <Card className="shadow-sm border-l-4" style={{ borderLeftColor: fundSourceColor }}>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Saldo total (semua waktu)</p>
+            <p
+              className={cn(
+                "text-2xl sm:text-3xl font-semibold tabular-nums mt-1",
+                allTimeSummary.saldo >= 0
+                  ? "text-emerald-600"
+                  : "text-destructive"
+              )}
+            >
+              {allTimeSummary.saldo >= 0 ? "+" : "−"}
+              {formatRupiah(Math.abs(allTimeSummary.saldo))}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Masuk {formatRupiah(allTimeSummary.totalMasuk)} · Keluar{" "}
+              {formatRupiah(allTimeSummary.totalKeluar)}
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Filter periode</CardTitle>
             <CardDescription>
-              Pilih harian (tanggal tertentu) atau bulanan (seluruh bulan)
+              Riwayat harian atau bulanan untuk {fundSourceName}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -205,9 +218,9 @@ export default function HistoryView({ userName }: HistoryViewProps) {
 
             {periodMode === "harian" ? (
               <div className="space-y-2 max-w-xs">
-                <Label htmlFor="filter-date">Tanggal</Label>
+                <Label htmlFor="fs-filter-date">Tanggal</Label>
                 <Input
-                  id="filter-date"
+                  id="fs-filter-date"
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
@@ -216,9 +229,9 @@ export default function HistoryView({ userName }: HistoryViewProps) {
               </div>
             ) : (
               <div className="space-y-2 max-w-xs">
-                <Label htmlFor="filter-month">Bulan</Label>
+                <Label htmlFor="fs-filter-month">Bulan</Label>
                 <Input
-                  id="filter-month"
+                  id="fs-filter-month"
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
@@ -228,14 +241,13 @@ export default function HistoryView({ userName }: HistoryViewProps) {
             )}
 
             <p className="text-sm text-muted-foreground">
-              Menampilkan data untuk{" "}
+              Periode:{" "}
               <span className="font-medium text-foreground">
                 {formatPeriodLabel(periodMode, periodValue)}
               </span>
             </p>
           </CardContent>
         </Card>
-        </motion.div>
 
         <motion.section
           className="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -244,149 +256,52 @@ export default function HistoryView({ userName }: HistoryViewProps) {
           animate="animate"
         >
           <motion.div variants={staggerItem}>
-          <Card size="sm" className="shadow-sm">
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">Total pemasukan</p>
-              <p className="text-xl font-semibold text-emerald-600 tabular-nums">
-                {formatRupiah(summary.masuk)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card size="sm" className="shadow-sm">
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground">Pemasukan periode</p>
+                <p className="text-xl font-semibold text-emerald-600 tabular-nums">
+                  {formatRupiah(periodSummary.masuk)}
+                </p>
+              </CardContent>
+            </Card>
           </motion.div>
           <motion.div variants={staggerItem}>
-          <Card size="sm" className="shadow-sm">
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">Total pengeluaran</p>
-              <p className="text-xl font-semibold text-destructive tabular-nums">
-                {formatRupiah(summary.keluar)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card size="sm" className="shadow-sm">
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground">Pengeluaran periode</p>
+                <p className="text-xl font-semibold text-destructive tabular-nums">
+                  {formatRupiah(periodSummary.keluar)}
+                </p>
+              </CardContent>
+            </Card>
           </motion.div>
           <motion.div variants={staggerItem}>
-          <Card size="sm" className="shadow-sm">
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">Selisih periode</p>
-              <p
-                className={cn(
-                  "text-xl font-semibold tabular-nums",
-                  summary.net >= 0 ? "text-emerald-600" : "text-destructive"
-                )}
-              >
-                {summary.net >= 0 ? "+" : "−"}
-                {formatRupiah(Math.abs(summary.net))}
-              </p>
-            </CardContent>
-          </Card>
+            <Card size="sm" className="shadow-sm">
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground">Selisih periode</p>
+                <p
+                  className={cn(
+                    "text-xl font-semibold tabular-nums",
+                    periodSummary.net >= 0
+                      ? "text-emerald-600"
+                      : "text-destructive"
+                  )}
+                >
+                  {periodSummary.net >= 0 ? "+" : "−"}
+                  {formatRupiah(Math.abs(periodSummary.net))}
+                </p>
+              </CardContent>
+            </Card>
           </motion.div>
         </motion.section>
 
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 space-y-3">
-            <div>
-              <CardTitle className="text-base">Rekap periode</CardTitle>
-              <CardDescription>
-                {recapView === "penyimpanan"
-                  ? typeFilter === "keluar"
-                    ? "Pengeluaran per Cash, bank, dan e-wallet"
-                    : typeFilter === "masuk"
-                      ? "Pemasukan per tipe penyimpanan"
-                      : "Masuk & keluar per Cash, BCA, Seabank, dan lainnya"
-                  : "Pemasukan & pengeluaran per kategori transaksi"}
-              </CardDescription>
-            </div>
-            <Tabs
-              value={recapView}
-              onValueChange={(v) => setRecapView(v as RecapViewMode)}
-            >
-              <TabsList className="w-full sm:w-auto">
-                <TabsTrigger value="kategori">Per kategori</TabsTrigger>
-                <TabsTrigger value="penyimpanan">Per tipe penyimpanan</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            {!recapHasData ? (
-              <p className="text-sm text-muted-foreground py-2">
-                Belum ada transaksi untuk rekap pada periode ini.
-              </p>
-            ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {recapRows.map((row) => {
-                  const net = recapRowNet(row, typeFilter);
-                  const rowContent = (
-                    <>
-                      <span
-                        className="h-8 w-1 shrink-0 rounded-full"
-                        style={{ backgroundColor: row.color }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {row.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatRecapAmountLine(row, typeFilter)}
-                        </p>
-                      </div>
-                      <p
-                        className={cn(
-                          "text-xs font-semibold tabular-nums",
-                          typeFilter === "keluar"
-                            ? "text-destructive"
-                            : typeFilter === "masuk"
-                              ? "text-emerald-600"
-                              : net >= 0
-                                ? "text-emerald-600"
-                                : "text-destructive"
-                        )}
-                      >
-                        {typeFilter === "keluar"
-                          ? `−${formatRupiah(row.keluar)}`
-                          : typeFilter === "masuk"
-                            ? `+${formatRupiah(row.masuk)}`
-                            : `${net >= 0 ? "+" : "−"}${formatRupiah(Math.abs(net))}`}
-                      </p>
-                      {recapView === "penyimpanan" && row.slug && (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                    </>
-                  );
-
-                  if (recapView === "penyimpanan" && row.slug) {
-                    return (
-                      <Link
-                        key={row.id}
-                        href={`/dashboard/penyimpanan/${row.slug}`}
-                        className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60"
-                      >
-                        {rowContent}
-                      </Link>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={row.id}
-                      className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5"
-                    >
-                      {rowContent}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <motion.div variants={staggerItem} initial="initial" animate="animate">
         <Card className="shadow-sm overflow-hidden">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3">
             <div>
-              <CardTitle className="text-base">Daftar transaksi</CardTitle>
+              <CardTitle className="text-base">Riwayat transaksi</CardTitle>
               <CardDescription>
-                {filteredTx.length} dari {periodAll.length} transaksi pada
-                periode ini
-                {typeFilter !== "all" && ` · ${typeFilter}`}
+                {filteredTx.length} dari {periodAll.length} transaksi ·{" "}
+                {fundSourceName}
               </CardDescription>
             </div>
             <Tabs
@@ -409,15 +324,8 @@ export default function HistoryView({ userName }: HistoryViewProps) {
                 </div>
                 <p className="text-sm font-medium">Tidak ada transaksi</p>
                 <p className="mt-1 text-xs text-muted-foreground max-w-xs">
-                  Tidak ada pemasukan/pengeluaran pada periode yang dipilih.
-                  Coba tanggal atau bulan lain.
+                  Tidak ada transaksi {fundSourceName} pada periode ini.
                 </p>
-                <Link
-                  href="/dashboard"
-                  className={cn(buttonVariants({ size: "sm" }), "mt-4")}
-                >
-                  Kembali ke dashboard
-                </Link>
               </div>
             ) : (
               <ul className="divide-y">
@@ -443,12 +351,6 @@ export default function HistoryView({ userName }: HistoryViewProps) {
                           <div>
                             <p className="text-sm font-medium">
                               {tx.category.name}
-                              {tx.fundSource && (
-                                <span className="text-muted-foreground font-normal">
-                                  {" "}
-                                  · {tx.fundSource.name}
-                                </span>
-                              )}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {formatTransactionDate(tx.date)}
@@ -487,7 +389,6 @@ export default function HistoryView({ userName }: HistoryViewProps) {
             )}
           </CardContent>
         </Card>
-        </motion.div>
       </main>
 
       <AppFooter className="mt-auto border-t bg-background/95" />

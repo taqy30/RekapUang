@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   History,
+  ChevronRight,
 } from "lucide-react";
 import TransactionModal, {
   type Category,
@@ -72,10 +73,16 @@ function RecapGrid({ rows }: { rows: RecapRow[] }) {
   );
 }
 
-function RecapRowItem({ row }: { row: RecapRow }) {
+function RecapRowItem({
+  row,
+  href,
+}: {
+  row: RecapRow;
+  href?: string;
+}) {
   const net = row.masuk - row.keluar;
-  return (
-    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
+  const inner = (
+    <>
       <span
         className="h-8 w-1 shrink-0 rounded-full"
         style={{ backgroundColor: row.color }}
@@ -95,6 +102,26 @@ function RecapRowItem({ row }: { row: RecapRow }) {
         {net >= 0 ? "+" : "−"}
         {formatRupiah(Math.abs(net))}
       </p>
+      {href && (
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
+      {inner}
     </div>
   );
 }
@@ -121,7 +148,11 @@ function CollapsibleRecapGrid({ rows }: { rows: RecapRow[] }) {
     <div className="space-y-3">
       <div className="grid gap-2 sm:grid-cols-2">
         {visible.map((row) => (
-          <RecapRowItem key={row.id} row={row} />
+          <RecapRowItem
+            key={row.id}
+            row={row}
+            href={`/dashboard/penyimpanan/${row.slug}`}
+          />
         ))}
       </div>
       {hasMore && (
@@ -374,12 +405,23 @@ export default function Dashboard({ userName }: DashboardProps) {
 
         <motion.div variants={staggerItem} initial="initial" animate="animate">
           <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
-            <CardDescription>
-              Cash, BCA, Seabank, Mandiri, ShopeePay, GoPay — klik Selengkapnya
-              untuk semua bank & e-wallet
-            </CardDescription>
+          <CardHeader className="pb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
+              <CardDescription>
+                Cash, BCA, Seabank, Mandiri, ShopeePay, GoPay — ketuk baris
+                untuk riwayat lengkap
+              </CardDescription>
+            </div>
+            <Link
+              href="/dashboard/penyimpanan"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "shrink-0"
+              )}
+            >
+              Rekap semua penyimpanan
+            </Link>
           </CardHeader>
           <CardContent>
             <CollapsibleRecapGrid rows={fundSourceSummary} />
