@@ -68,7 +68,8 @@ export async function POST(request: Request) {
         },
       });
 
-      const appUrl = process.env.APP_URL || "http://localhost:3000";
+      const reqUrl = new URL(request.url);
+      const appUrl = process.env.APP_URL || reqUrl.origin;
       const resetUrl = `${appUrl}/reset-password?token=${rawToken}`;
 
       try {
