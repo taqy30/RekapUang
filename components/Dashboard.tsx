@@ -223,11 +223,14 @@ function StatCard({
   );
 }
 
+import { useInactivityLogout } from "@/lib/useInactivityLogout";
+
 type DashboardProps = {
   userName: string;
 };
 
 export default function Dashboard({ userName }: DashboardProps) {
+  useInactivityLogout();
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);

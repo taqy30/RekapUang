@@ -33,6 +33,15 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password wajib diisi").max(72),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token tidak valid"),
+  password: passwordSchema,
+});
+
 export const verifyOtpSchema = z.object({
   email: emailSchema,
   code: z

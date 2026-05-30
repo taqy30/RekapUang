@@ -280,8 +280,8 @@ export default function TransactionModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden">
-        <DialogHeader className="px-5 pt-5 pb-3">
+      <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden max-h-[85dvh] flex flex-col">
+        <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
           <DialogTitle>
             {editData ? "Edit transaksi" : "Tambah transaksi"}
           </DialogTitle>
@@ -290,7 +290,7 @@ export default function TransactionModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={submit} className="px-5 pb-5 space-y-4">
+        <form onSubmit={submit} className="px-5 pb-5 space-y-4 overflow-y-auto overscroll-contain flex-1 min-h-0">
           <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
             {(["masuk", "keluar"] as const).map((t) => (
               <button

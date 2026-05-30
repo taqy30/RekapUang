@@ -257,6 +257,17 @@ export default function AuthForm({ mode }: AuthFormProps) {
                     }
                   />
 
+                  {mode === "login" && (
+                    <div className="flex justify-end -mt-2 mb-2">
+                      <Link
+                        href="/forgot-password"
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Lupa password?
+                      </Link>
+                    </div>
+                  )}
+
                   {error && (
                     <Alert variant="destructive">
                       <AlertDescription>{error}</AlertDescription>

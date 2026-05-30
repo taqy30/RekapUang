@@ -101,3 +101,64 @@ export async function sendOtpEmail(
     html: otpEmailHtml(name, code),
   });
 }
+
+function resetPasswordEmailHtml(name: string, resetUrl: string): string {
+  const safeName = escapeHtml(name);
+  return `<!doctype html>
+<html lang="id">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:28px 28px 8px 28px;">
+              <div style="display:inline-block;width:44px;height:44px;background:#e0e7ff;border-radius:10px;line-height:44px;text-align:center;font-size:22px;color:#4338ca;font-weight:700;">R</div>
+              <h1 style="margin:16px 0 4px 0;font-size:20px;color:#0f172a;">Reset Password</h1>
+              <p style="margin:0;font-size:14px;color:#64748b;">Halo ${safeName}, kami menerima permintaan untuk mereset password akun Anda. Klik tombol di bawah ini untuk membuat password baru:</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 28px 8px 28px;">
+              <a href="${resetUrl}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Reset Password</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px 28px 28px;font-size:13px;color:#64748b;line-height:1.6;">
+              Link ini hanya berlaku selama <strong>15 menit</strong>.
+              <br><br>
+              Jika Anda tidak meminta reset password, abaikan email ini. Password Anda tidak akan berubah.
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0 0;font-size:12px;color:#94a3b8;">© RekapUang</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendPasswordResetEmail(
+  to: string,
+  name: string,
+  resetUrl: string
+): Promise<void> {
+  const transporter = getTransporter();
+
+  if (!transporter) {
+    const banner = "═".repeat(58);
+    console.log(
+      `\n${banner}\n  [DEV] Reset Password untuk ${to}\n  Nama  : ${name}\n  URL   : ${resetUrl}\n  (SMTP belum dikonfigurasi - email tidak dikirim)\n${banner}\n`
+    );
+    return;
+  }
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    subject: "Reset Password RekapUang",
+    text: `Halo ${name},\n\nKami menerima permintaan untuk mereset password Anda.\nSilakan kunjungi link berikut untuk mereset password (berlaku 15 menit):\n\n${resetUrl}\n\nJika Anda tidak memintanya, abaikan email ini.\n`,
+    html: resetPasswordEmailHtml(name, resetUrl),
+  });
+}

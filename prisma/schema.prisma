@@ -33,6 +33,18 @@ model PendingRegistration {
   @@index([expiresAt])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([tokenHash])
+}
+
 model Category {
   id           String        @id @default(cuid())
   name         String        @unique
