@@ -55,11 +55,8 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        {
-          message: "Jika email valid, kode OTP telah dikirim.",
-          email,
-        },
-        { status: 200 }
+        { error: "Email sudah terdaftar. Silakan gunakan email lain atau login." },
+        { status: 400 }
       );
     }
 
