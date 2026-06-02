@@ -96,3 +96,20 @@ export const loadingSkeleton = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, ease: easeOut },
 };
+
+/* Modal transaksi */
+export const modalFormStagger = {
+  initial: {},
+  animate: {
+    transition: { staggerChildren: 0.05, delayChildren: 0.06 },
+  },
+};
+
+export const modalFormItem = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.28, ease: easeOut },
+  },
+};

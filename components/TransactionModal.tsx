@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import CurrencyInput from "./CurrencyInput";
 import FundSourceIcon, { FUND_ICON } from "./FundSourceIcon";
@@ -33,6 +34,7 @@ import {
   getStorageKindBySlug,
   type StorageKind,
 } from "@/lib/fund-sources";
+import { modalFormItem, modalFormStagger } from "@/lib/motion";
 
 export type Category = {
   id: string;
@@ -192,6 +194,46 @@ function StorageTypeSelect({
   );
 }
 
+function TypeToggle({
+  type,
+  onChange,
+}: {
+  type: "masuk" | "keluar";
+  onChange: (t: "masuk" | "keluar") => void;
+}) {
+  return (
+    <div className="relative grid grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+      {(["masuk", "keluar"] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          onClick={() => onChange(t)}
+          className={cn(
+            "relative z-10 rounded-md py-2 text-sm font-medium transition-colors duration-200",
+            type === t
+              ? t === "masuk"
+                ? "text-primary"
+                : "text-destructive"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {type === t && (
+            <motion.span
+              layoutId="tx-type-highlight"
+              className="absolute inset-0 rounded-md bg-background shadow-sm"
+              transition={{ type: "spring", stiffness: 480, damping: 34 }}
+              aria-hidden
+            />
+          )}
+          <span className="relative z-10">
+            {t === "masuk" ? "+ Masuk" : "− Keluar"}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function TransactionModal({
   open,
   onClose,
@@ -287,98 +329,113 @@ export default function TransactionModal({
     }
   };
 
+  const formKey = editData?.id ?? `new-${defaultType}`;
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden max-h-[85dvh] flex flex-col">
-        <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
-          <DialogTitle>
-            {editData ? "Edit transaksi" : "Tambah transaksi"}
-          </DialogTitle>
-          <DialogDescription>
-            Pilih kategori transaksi dan tipe penyimpanan (Cash, bank, e-wallet)
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className={cn(
+          "sm:max-w-md gap-0 p-0 overflow-hidden max-h-[85dvh] flex flex-col",
+          "duration-300 data-open:duration-300 data-closed:duration-200",
+          "data-open:slide-in-from-bottom-6 sm:data-open:slide-in-from-bottom-0",
+          "data-open:zoom-in-95 data-open:fade-in-0"
+        )}
+      >
+        <motion.div
+          key={formKey}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
+            <DialogTitle>
+              {editData ? "Edit transaksi" : "Tambah transaksi"}
+            </DialogTitle>
+            <DialogDescription>
+              Pilih kategori transaksi dan tipe penyimpanan (Cash, bank, e-wallet)
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={submit} className="px-5 pb-5 space-y-4 overflow-y-auto overscroll-contain flex-1 min-h-0">
-          <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
-            {(["masuk", "keluar"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={cn(
-                  "py-2 rounded-md text-sm font-medium transition-all",
-                  type === t
-                    ? t === "masuk"
-                      ? "bg-background text-primary shadow-sm"
-                      : "bg-background text-destructive shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {t === "masuk" ? "+ Masuk" : "− Keluar"}
-              </button>
-            ))}
-          </div>
+          <motion.form
+            onSubmit={submit}
+            className="px-5 pb-5 space-y-4 overflow-y-auto overscroll-contain flex-1 min-h-0"
+            variants={modalFormStagger}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div variants={modalFormItem}>
+              <TypeToggle type={type} onChange={setType} />
+            </motion.div>
 
-          <div className="space-y-2">
-            <Label>Jumlah</Label>
-            <CurrencyInput value={amount} onChange={setAmount} required />
-          </div>
+            <motion.div variants={modalFormItem} className="space-y-2">
+              <Label>Jumlah</Label>
+              <CurrencyInput value={amount} onChange={setAmount} required />
+            </motion.div>
 
-          <CategorySelect
-            value={categoryId}
-            onValueChange={setCategoryId}
-            options={categories}
-            selected={selectedCategory}
-          />
+            <motion.div variants={modalFormItem}>
+              <CategorySelect
+                value={categoryId}
+                onValueChange={setCategoryId}
+                options={categories}
+                selected={selectedCategory}
+              />
+            </motion.div>
 
-          <StorageTypeSelect
-            value={fundSourceId}
-            onValueChange={setFundSourceId}
-            options={fundSources}
-            selected={selectedFundSource}
-          />
+            <motion.div variants={modalFormItem}>
+              <StorageTypeSelect
+                value={fundSourceId}
+                onValueChange={setFundSourceId}
+                options={fundSources}
+                selected={selectedFundSource}
+              />
+            </motion.div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tx-date">Tanggal</Label>
-            <Input
-              id="tx-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="h-10"
-            />
-          </div>
+            <motion.div variants={modalFormItem} className="space-y-2">
+              <Label htmlFor="tx-date">Tanggal</Label>
+              <Input
+                id="tx-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="h-10"
+              />
+            </motion.div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tx-desc">Keterangan (opsional)</Label>
-            <Textarea
-              id="tx-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Contoh: Gaji bulan ini"
-              rows={2}
-              maxLength={200}
-              className="resize-none"
-            />
-          </div>
+            <motion.div variants={modalFormItem} className="space-y-2">
+              <Label htmlFor="tx-desc">Keterangan (opsional)</Label>
+              <Textarea
+                id="tx-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Contoh: Gaji bulan ini"
+                rows={2}
+                maxLength={200}
+                className="resize-none"
+              />
+            </motion.div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+            {error && (
+              <motion.div variants={modalFormItem}>
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
 
-          <DialogFooter className="gap-2 sm:gap-2 pt-2 px-0 pb-0 bg-transparent border-0">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Batal
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Menyimpan..." : "Simpan"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <motion.div variants={modalFormItem}>
+              <DialogFooter className="gap-2 sm:gap-2 pt-2 px-0 pb-0 bg-transparent border-0">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Batal
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </DialogFooter>
+            </motion.div>
+          </motion.form>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );
