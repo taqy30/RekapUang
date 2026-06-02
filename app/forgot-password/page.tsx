@@ -16,7 +16,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -63,7 +62,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/40">
+    <main className="min-h-screen flex flex-col bg-muted/40">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* Panel kiri — branding (desktop) */}
         <motion.div
@@ -102,7 +101,9 @@ export default function ForgotPasswordPage() {
                   <span className="font-semibold">{APP_NAME}</span>
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Lupa Password</CardTitle>
+                  <h1 className="text-2xl font-semibold leading-none tracking-tight">
+                    Lupa Password
+                  </h1>
                   <CardDescription className="mt-1.5">
                     Masukkan email Anda untuk menerima link reset password.
                   </CardDescription>
@@ -165,6 +166,6 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
       <AppFooter className="border-t bg-muted/40 lg:bg-background" />
-    </div>
+    </main>
   );
 }

@@ -67,9 +67,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    return applySecurityHeaders(
-      NextResponse.redirect(new URL(isLoggedIn ? "/dashboard" : "/login", request.url))
-    );
+    if (isLoggedIn) {
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL("/dashboard", request.url))
+      );
+    }
+    return applySecurityHeaders(NextResponse.next());
   }
 
   if (!isLoggedIn && pathname.startsWith("/dashboard")) {
@@ -80,5 +83,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/register", "/forgot-password", "/reset-password", "/dashboard/:path*", "/api/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/dashboard/:path*",
+    "/api/:path*",
+  ],
 };

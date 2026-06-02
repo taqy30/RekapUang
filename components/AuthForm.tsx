@@ -25,7 +25,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -140,7 +139,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/40">
+    <main className="min-h-screen flex flex-col bg-muted/40">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       {/* Panel kiri — branding (desktop) */}
       <motion.div
@@ -196,9 +195,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   <span className="font-semibold">{APP_NAME}</span>
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">
+                  <h1 className="text-2xl font-semibold leading-none tracking-tight">
                     {mode === "login" ? "Selamat datang" : "Buat akun"}
-                  </CardTitle>
+                  </h1>
                   <CardDescription className="mt-1.5">
                     {mode === "login"
                       ? "Masuk untuk melihat rekapitulasi keuangan Anda"
@@ -326,6 +325,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
       </div>
       </div>
       <AppFooter className="border-t bg-muted/40 lg:bg-background" />
-    </div>
+    </main>
   );
 }
