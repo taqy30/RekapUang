@@ -97,6 +97,11 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
             Kode 6 digit dikirim ke{" "}
             <span className="font-medium text-foreground">{email}</span>
           </p>
+          <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed">
+            Jika belum masuk, cek folder <span className="font-medium text-foreground">Inbox Utama</span>,{" "}
+            <span className="font-medium text-foreground">Spam</span>, atau{" "}
+            <span className="font-medium text-foreground">Semua Email</span>.
+          </p>
         </div>
       </div>
 

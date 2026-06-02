@@ -120,7 +120,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (mode === "register") {
-        void notifyInfo("Kode OTP terkirim", "Silakan cek email yang didaftarkan.", 1600);
+        void notifyInfo(
+          "Kode OTP terkirim",
+          "Cek Inbox Utama, Spam, atau Semua Email.",
+          1800
+        );
         setStep("otp");
         setSubmitting(false);
         return;
