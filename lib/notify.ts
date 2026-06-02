@@ -17,6 +17,8 @@ type ConfirmOptions = {
   confirmText?: string;
   cancelText?: string;
   icon?: "warning" | "question" | "info";
+  confirmButtonColor?: string;
+  cancelButtonColor?: string;
 };
 
 export async function showNotify({
@@ -67,6 +69,8 @@ export async function confirmAction({
   confirmText = "Ya",
   cancelText = "Batal",
   icon = "warning",
+  confirmButtonColor = "#dc2626",
+  cancelButtonColor = "#64748b",
 }: ConfirmOptions): Promise<boolean> {
   try {
     const result = await Swal.fire({
@@ -76,6 +80,8 @@ export async function confirmAction({
       showCancelButton: true,
       confirmButtonText: confirmText,
       cancelButtonText: cancelText,
+      confirmButtonColor,
+      cancelButtonColor,
       reverseButtons: true,
       focusCancel: true,
       heightAuto: false,

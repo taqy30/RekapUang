@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -229,6 +229,9 @@ type DashboardProps = {
   userName: string;
 };
 
+const DASHBOARD_CACHE_KEY = "rekapuang_dashboard_cache_v1";
+const DASHBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
+
 export default function Dashboard({ userName }: DashboardProps) {
   useInactivityLogout();
   const router = useRouter();
@@ -248,6 +251,15 @@ export default function Dashboard({ userName }: DashboardProps) {
   const [defaultType, setDefaultType] = useState<"masuk" | "keluar">("masuk");
   const [filter, setFilter] = useState<"all" | "masuk" | "keluar">("all");
 
+  const applyDashboardData = useCallback((data: DashboardData) => {
+    setTransactions(data.transactions as Transaction[]);
+    setSummary(data.summary);
+    setCategorySummary(data.categorySummary);
+    setFundSourceSummary(data.fundSourceSummary);
+    setCategories(data.categories);
+    setFundSources(data.fundSources);
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/transactions", { cache: "no-store" });
@@ -256,22 +268,41 @@ export default function Dashboard({ userName }: DashboardProps) {
         return;
       }
       const data: DashboardData = await res.json();
-      setTransactions(data.transactions as Transaction[]);
-      setSummary(data.summary);
-      setCategorySummary(data.categorySummary);
-      setFundSourceSummary(data.fundSourceSummary);
-      setCategories(data.categories);
-      setFundSources(data.fundSources);
+      applyDashboardData(data);
+      try {
+        sessionStorage.setItem(
+          DASHBOARD_CACHE_KEY,
+          JSON.stringify({ ts: Date.now(), data })
+        );
+      } catch {
+        // ignore cache errors
+      }
       setReady(true);
     } catch {
       void notifyError("Gagal memuat data", "Silakan coba lagi.");
       setReady(true);
     }
-  }, [router]);
+  }, [router, applyDashboardData]);
 
   useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts?: number; data?: DashboardData };
+        if (
+          parsed?.ts &&
+          parsed?.data &&
+          Date.now() - parsed.ts < DASHBOARD_CACHE_TTL_MS
+        ) {
+          applyDashboardData(parsed.data);
+          setReady(true);
+        }
+      }
+    } catch {
+      // ignore cache parse errors
+    }
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, applyDashboardData]);
 
   const filteredTx = useMemo(() => {
     const list =
@@ -293,6 +324,7 @@ export default function Dashboard({ userName }: DashboardProps) {
       text: "Data yang dihapus tidak bisa dikembalikan.",
       confirmText: "Ya, hapus",
       cancelText: "Batal",
+      confirmButtonColor: "#dc2626",
     });
     if (!ok) return;
     const previous = transactions;
@@ -314,6 +346,7 @@ export default function Dashboard({ userName }: DashboardProps) {
       text: "Anda harus login kembali untuk melanjutkan.",
       confirmText: "Ya, logout",
       cancelText: "Batal",
+      confirmButtonColor: "#dc2626",
     });
     if (!ok) return;
     await fetch("/api/auth/logout", { method: "POST" });
@@ -527,9 +560,15 @@ export default function Dashboard({ userName }: DashboardProps) {
                       </tr>
                     </thead>
                     <tbody>
+                      <AnimatePresence initial={false}>
                         {filteredTx.map((tx) => (
-                          <tr
+                          <motion.tr
+                            layout
                             key={tx.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.18, ease: "easeOut" }}
                             className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                           >
                             <td className="px-5 py-3 whitespace-nowrap">
@@ -594,16 +633,23 @@ export default function Dashboard({ userName }: DashboardProps) {
                                 </Button>
                               </div>
                             </td>
-                          </tr>
+                          </motion.tr>
                         ))}
+                      </AnimatePresence>
                     </tbody>
                   </table>
                 </div>
 
                 <ul className="md:hidden divide-y">
-                  {filteredTx.map((tx) => (
-                    <li
+                  <AnimatePresence initial={false}>
+                    {filteredTx.map((tx) => (
+                    <motion.li
+                      layout
                       key={tx.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
                       className="px-4 py-3.5"
                     >
                       <div className="flex gap-3">
@@ -674,8 +720,9 @@ export default function Dashboard({ userName }: DashboardProps) {
                           </div>
                         </div>
                       </div>
-                    </li>
+                    </motion.li>
                   ))}
+                  </AnimatePresence>
                 </ul>
               </>
             )}
