@@ -50,6 +50,7 @@ import {
 import type { FundSource } from "./TransactionModal";
 import type { DashboardData } from "@/lib/dashboard-data";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
+import { useInactivityLogout } from "@/lib/useInactivityLogout";
 
 type HistoryViewProps = {
   userName: string;
@@ -58,6 +59,7 @@ type HistoryViewProps = {
 export default function HistoryView({ userName }: HistoryViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  useInactivityLogout();
 
   const [ready, setReady] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);

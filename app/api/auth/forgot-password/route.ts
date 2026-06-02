@@ -53,20 +53,18 @@ export async function POST(request: Request) {
       const tokenHash = createHash("sha256").update(rawToken).digest("hex");
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 menit
 
-      await prisma.passwordResetToken.upsert({
-        where: { tokenHash },
-        update: {
-          email: user.email,
-          expiresAt,
-          usedAt: null,
-          createdAt: new Date(),
-        },
-        create: {
-          email: user.email,
-          tokenHash,
-          expiresAt,
-        },
-      });
+      await prisma.$transaction([
+        prisma.passwordResetToken.deleteMany({
+          where: { email: user.email, usedAt: null },
+        }),
+        prisma.passwordResetToken.create({
+          data: {
+            email: user.email,
+            tokenHash,
+            expiresAt,
+          },
+        }),
+      ]);
 
       const reqUrl = new URL(request.url);
       const appUrl = process.env.APP_URL || reqUrl.origin;

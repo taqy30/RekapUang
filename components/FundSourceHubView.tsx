@@ -19,6 +19,7 @@ import {
 import FundStorageListItem from "./FundStorageListItem";
 import type { FundSourceSummary } from "@/lib/fund-source-detail";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
+import { useInactivityLogout } from "@/lib/useInactivityLogout";
 
 type FundSourceHubViewProps = {
   userName: string;
@@ -26,6 +27,7 @@ type FundSourceHubViewProps = {
 
 export default function FundSourceHubView({ userName }: FundSourceHubViewProps) {
   const router = useRouter();
+  useInactivityLogout();
   const [ready, setReady] = useState(false);
   const [items, setItems] = useState<FundSourceSummary[]>([]);
 

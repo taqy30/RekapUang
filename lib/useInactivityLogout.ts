@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { notifyInfo } from "@/lib/notify";
 
 const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 menit
 const STORAGE_KEY = "rekapuang_last_activity";
@@ -27,7 +27,11 @@ export function useInactivityLogout() {
       // best-effort logout
     }
 
-    toast.info("Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan login kembali.");
+    await notifyInfo(
+      "Sesi berakhir",
+      "Tidak ada aktivitas lebih dari 30 menit. Silakan login kembali.",
+      1800
+    );
     router.push("/login");
     router.refresh();
   }, [router]);

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -49,6 +48,7 @@ import {
   pickRecapPreviewRows,
 } from "@/lib/fund-sources";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
+import { confirmAction, notifyError, notifySuccess } from "@/lib/notify";
 
 type Summary = {
   saldo: number;
@@ -264,7 +264,7 @@ export default function Dashboard({ userName }: DashboardProps) {
       setFundSources(data.fundSources);
       setReady(true);
     } catch {
-      toast.error("Gagal memuat data");
+      void notifyError("Gagal memuat data", "Silakan coba lagi.");
       setReady(true);
     }
   }, [router]);
@@ -288,21 +288,34 @@ export default function Dashboard({ userName }: DashboardProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Hapus transaksi ini?")) return;
+    const ok = await confirmAction({
+      title: "Hapus transaksi?",
+      text: "Data yang dihapus tidak bisa dikembalikan.",
+      confirmText: "Ya, hapus",
+      cancelText: "Batal",
+    });
+    if (!ok) return;
     const previous = transactions;
     setTransactions((curr) => curr.filter((t) => t.id !== id));
     try {
       const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      toast.success("Transaksi dihapus");
+      void notifySuccess("Berhasil", "Transaksi dihapus");
       fetchData();
     } catch {
       setTransactions(previous);
-      toast.error("Gagal menghapus");
+      void notifyError("Gagal", "Transaksi gagal dihapus");
     }
   };
 
   const handleLogout = async () => {
+    const ok = await confirmAction({
+      title: "Yakin ingin logout?",
+      text: "Anda harus login kembali untuk melanjutkan.",
+      confirmText: "Ya, logout",
+      cancelText: "Batal",
+    });
+    if (!ok) return;
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();

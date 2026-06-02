@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -74,11 +75,16 @@ function ResetPasswordForm() {
 
       if (!res.ok) {
         setError(data.error || "Terjadi kesalahan");
+        void notifyError("Gagal", data.error || "Terjadi kesalahan");
         setSubmitting(false);
         return;
       }
 
       setSuccess(data.message || "Password berhasil diubah.");
+      void notifySuccess(
+        "Password diubah",
+        data.message || "Password berhasil diubah."
+      );
       setSubmitting(false);
       
       setTimeout(() => {
@@ -86,6 +92,7 @@ function ResetPasswordForm() {
       }, 3000);
     } catch {
       setError("Koneksi gagal, coba lagi");
+      void notifyError("Koneksi gagal", "Coba lagi dalam beberapa saat.");
       setSubmitting(false);
     }
   };

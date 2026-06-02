@@ -4,8 +4,9 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 
 const COOKIE_NAME = "rekapuang_session";
-const EXPIRY = "7d";
-const EXPIRY_SECONDS = 60 * 60 * 24 * 7;
+const SESSION_MAX_AGE_MINUTES = 30;
+const EXPIRY = `${SESSION_MAX_AGE_MINUTES}m`;
+const EXPIRY_SECONDS = SESSION_MAX_AGE_MINUTES * 60;
 
 function getSecret() {
   const secret = process.env.JWT_SECRET;

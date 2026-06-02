@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 import { Eye, EyeOff, Wallet } from "lucide-react";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +13,7 @@ import {
   slideFromRightRelaxed,
 } from "@/lib/motion";
 import { goToDashboardAfterAuth } from "@/lib/navigation";
+import { notifyInfo } from "@/lib/notify";
 import OtpForm from "./OtpForm";
 import AppFooter from "./AppFooter";
 import { Button } from "@/components/ui/button";
@@ -120,7 +120,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (mode === "register") {
-        toast.info("Kode OTP dikirim ke email Anda");
+        void notifyInfo("Kode OTP terkirim", "Silakan cek email yang didaftarkan.", 1600);
         setStep("otp");
         setSubmitting(false);
         return;

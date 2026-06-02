@@ -96,7 +96,6 @@ export async function sendOtpEmail(
   await transporter.sendMail({
     from: fromAddress(),
     to,
-    replyTo: fromAddress(),
     subject: `Kode Verifikasi: ${code}`,
     text: `Halo ${name},\n\nKode verifikasi RekapUang Anda: ${code}\nBerlaku ${OTP_TTL_MINUTES} menit.\n\nJangan bagikan kode ini ke siapa pun.\n`,
     html: otpEmailHtml(name, code),
@@ -158,7 +157,6 @@ export async function sendPasswordResetEmail(
   await transporter.sendMail({
     from: fromAddress(),
     to,
-    replyTo: fromAddress(),
     subject: "Reset Password RekapUang",
     text: `Halo ${name},\n\nKami menerima permintaan untuk mereset password Anda.\nSilakan kunjungi link berikut untuk mereset password (berlaku 15 menit):\n\n${resetUrl}\n\nJika Anda tidak memintanya, abaikan email ini.\n`,
     html: resetPasswordEmailHtml(name, resetUrl),

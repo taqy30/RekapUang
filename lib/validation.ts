@@ -38,7 +38,10 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Token tidak valid"),
+  token: z
+    .string()
+    .trim()
+    .regex(/^[a-f0-9]{64}$/i, "Token tidak valid"),
   password: passwordSchema,
 });
 

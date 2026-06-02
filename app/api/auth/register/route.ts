@@ -55,8 +55,10 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Email sudah terdaftar. Silakan gunakan email lain atau login." },
-        { status: 400 }
+        {
+          error: "Email sudah terdaftar. Gunakan email lain atau login.",
+        },
+        { status: 409 }
       );
     }
 

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -43,14 +44,20 @@ export default function ForgotPasswordPage() {
 
       if (!res.ok) {
         setError(data.error || "Terjadi kesalahan");
+        void notifyError("Gagal", data.error || "Terjadi kesalahan");
         setSubmitting(false);
         return;
       }
 
       setSuccess(data.message || "Link reset password telah dikirim.");
+      void notifySuccess(
+        "Email terkirim",
+        data.message || "Link reset password telah dikirim."
+      );
       setSubmitting(false);
     } catch {
       setError("Koneksi gagal, coba lagi");
+      void notifyError("Koneksi gagal", "Coba lagi dalam beberapa saat.");
       setSubmitting(false);
     }
   };

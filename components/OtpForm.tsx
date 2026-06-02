@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { goToDashboardAfterAuth } from "@/lib/navigation";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -73,13 +73,13 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Gagal mengirim ulang");
+        void notifyError("Gagal", data.error || "Gagal mengirim ulang");
         return;
       }
-      toast.success("Kode baru telah dikirim");
+      void notifySuccess("Berhasil", "Kode baru telah dikirim");
       setCooldown(RESEND_COOLDOWN);
     } catch {
-      toast.error("Koneksi gagal");
+      void notifyError("Koneksi gagal", "Periksa internet lalu coba lagi.");
     }
   };
 

@@ -58,6 +58,14 @@ export async function POST(request: Request) {
         where: { tokenHash },
         data: { usedAt: new Date() },
       }),
+      prisma.passwordResetToken.updateMany({
+        where: {
+          email: resetToken.email,
+          usedAt: null,
+          tokenHash: { not: tokenHash },
+        },
+        data: { usedAt: new Date() },
+      }),
     ]);
 
     return NextResponse.json({

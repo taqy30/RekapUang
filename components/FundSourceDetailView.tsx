@@ -43,6 +43,7 @@ import {
 import type { FundSourceDetailData } from "@/lib/fund-source-detail";
 import FundSourceIcon, { FUND_ICON } from "./FundSourceIcon";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
+import { useInactivityLogout } from "@/lib/useInactivityLogout";
 
 type FundSourceDetailViewProps = {
   userName: string;
@@ -54,6 +55,7 @@ export default function FundSourceDetailView({
   slug,
 }: FundSourceDetailViewProps) {
   const router = useRouter();
+  useInactivityLogout();
   const [ready, setReady] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [fundSourceName, setFundSourceName] = useState("");

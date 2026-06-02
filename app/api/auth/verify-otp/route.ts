@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createSession, isSameOrigin } from "@/lib/auth";
 import { verifyOtpSchema, safeParseJson } from "@/lib/validation";
@@ -104,6 +105,15 @@ export async function POST(request: Request) {
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Email sudah terdaftar. Silakan login." },
+        { status: 409 }
+      );
+    }
     console.error("Verify OTP error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan. Coba lagi." },

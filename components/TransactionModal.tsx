@@ -99,7 +99,11 @@ function CategorySelect({
             <span className="text-muted-foreground">Pilih kategori</span>
           )}
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          align="start"
+          sideOffset={8}
+          className="max-h-[42dvh] sm:max-h-[280px] touch-pan-y"
+        >
           {options.map((opt) => (
             <SelectItem key={opt.id} value={opt.id} label={opt.name}>
               <span className="flex items-center gap-2">
@@ -159,7 +163,12 @@ function StorageTypeSelect({
             </span>
           )}
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          align="start"
+          side="top"
+          sideOffset={8}
+          className="max-h-[42dvh] sm:max-h-[280px] touch-pan-y"
+        >
           {STORAGE_KIND_ORDER.map((kind) => {
             const items = byKind.get(kind) ?? [];
             if (items.length === 0) return null;
