@@ -10,6 +10,7 @@ import {
 } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { jsonBodyErrorResponse, readJsonBody } from "@/lib/security";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -27,9 +28,10 @@ export async function POST(request: Request) {
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Format tidak valid" }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (err) {
+    const parsed = jsonBodyErrorResponse(err);
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const parsed = safeParseJson(registerSchema, body);

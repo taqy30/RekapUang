@@ -4,6 +4,7 @@ import { getSession, isSameOrigin } from "@/lib/auth";
 import { transactionSchema, safeParseJson } from "@/lib/validation";
 import { parseTransactionDate } from "@/lib/utils";
 import { loadDashboardData } from "@/lib/dashboard-data";
+import { jsonBodyErrorResponse, readJsonBody } from "@/lib/security";
 
 export async function GET() {
   const session = await getSession();
@@ -29,9 +30,10 @@ export async function POST(request: Request) {
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Format tidak valid" }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (err) {
+    const parsed = jsonBodyErrorResponse(err);
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const parsed = safeParseJson(transactionSchema, body);

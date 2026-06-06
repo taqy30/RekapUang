@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsMarkup, sanitizePlainText } from "@/lib/security";
 
 export const passwordSchema = z
   .string()
@@ -7,20 +8,46 @@ export const passwordSchema = z
   .regex(/[A-Za-z]/, "Password harus mengandung huruf")
   .regex(/[0-9]/, "Password harus mengandung angka");
 
+export const cuidSchema = z
+  .string()
+  .trim()
+  .min(20, "ID tidak valid")
+  .max(30, "ID tidak valid")
+  .regex(/^c[a-z0-9]+$/i, "ID tidak valid");
+
+export const fundSourceSlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, "Slug tidak valid")
+  .max(40, "Slug tidak valid")
+  .regex(/^[a-z0-9-]+$/, "Slug tidak valid");
+
 export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .min(5, "Email tidak valid")
-  .max(254, "Email terlalu panjang")
-  .email("Format email tidak valid");
+  .transform((value) => sanitizePlainText(value, 254))
+  .pipe(
+    z
+      .string()
+      .min(5, "Email tidak valid")
+      .max(254, "Email terlalu panjang")
+      .email("Format email tidak valid")
+  );
 
 export const nameSchema = z
   .string()
   .trim()
-  .min(2, "Nama minimal 2 karakter")
-  .max(60, "Nama maksimal 60 karakter")
-  .regex(/^[\p{L}\p{M} .'-]+$/u, "Nama mengandung karakter tidak valid");
+  .transform((value) => sanitizePlainText(value, 60))
+  .pipe(
+    z
+      .string()
+      .min(2, "Nama minimal 2 karakter")
+      .max(60, "Nama maksimal 60 karakter")
+      .regex(/^[\p{L}\p{M} .'-]+$/u, "Nama mengandung karakter tidak valid")
+      .refine((value) => !containsMarkup(value), "Nama mengandung karakter tidak valid")
+  );
 
 export const registerSchema = z.object({
   name: nameSchema,
@@ -30,7 +57,10 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Password wajib diisi").max(72),
+  password: z
+    .string()
+    .min(1, "Password wajib diisi")
+    .max(72, "Password terlalu panjang"),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -64,14 +94,21 @@ export const transactionSchema = z.object({
     .positive("Jumlah harus lebih dari 0")
     .max(999_999_999_999, "Jumlah terlalu besar")
     .finite(),
-  categoryId: z.string().min(1, "Kategori wajib dipilih").max(50),
-  fundSourceId: z.string().min(1, "Tipe penyimpanan wajib dipilih").max(50),
+  categoryId: cuidSchema,
+  fundSourceId: cuidSchema,
   description: z
     .string()
     .trim()
     .max(200, "Keterangan maksimal 200 karakter")
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((value) =>
+      value == null || value === "" ? null : sanitizePlainText(value, 200)
+    )
+    .refine(
+      (value) => value == null || !containsMarkup(value),
+      "Keterangan mengandung karakter tidak valid"
+    ),
   date: z
     .string()
     .optional()

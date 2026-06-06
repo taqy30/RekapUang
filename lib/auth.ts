@@ -2,6 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { getJwtSecretKey, isSameOrigin } from "@/lib/security";
+
+export { isSameOrigin };
 
 const COOKIE_NAME = "rekapuang_session";
 const SESSION_MAX_AGE_MINUTES = 30;
@@ -9,12 +12,7 @@ const EXPIRY = `${SESSION_MAX_AGE_MINUTES}m`;
 const EXPIRY_SECONDS = SESSION_MAX_AGE_MINUTES * 60;
 
 function getSecret() {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET tidak ditemukan");
-  if (secret.length < 32) {
-    throw new Error("JWT_SECRET terlalu pendek (minimal 32 karakter)");
-  }
-  return new TextEncoder().encode(secret);
+  return getJwtSecretKey();
 }
 
 export type SessionPayload = {
@@ -46,7 +44,7 @@ export async function createSession(
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     path: "/",
     maxAge: EXPIRY_SECONDS,
   });
@@ -81,15 +79,3 @@ export function formatRupiah(amount: number) {
   }).format(amount);
 }
 
-export function isSameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-
-  try {
-    const reqUrl = new URL(request.url);
-    const originUrl = new URL(origin);
-    return reqUrl.host === originUrl.host;
-  } catch {
-    return false;
-  }
-}

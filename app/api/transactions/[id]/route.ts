@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession, isSameOrigin } from "@/lib/auth";
-import { transactionSchema, safeParseJson } from "@/lib/validation";
+import { transactionSchema, safeParseJson, cuidSchema } from "@/lib/validation";
 import { parseTransactionDate } from "@/lib/utils";
+import { jsonBodyErrorResponse, readJsonBody } from "@/lib/security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,12 +18,17 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   const { id } = await params;
+  const idParsed = cuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return NextResponse.json({ error: "Transaksi tidak ditemukan" }, { status: 404 });
+  }
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Format tidak valid" }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (err) {
+    const parsed = jsonBodyErrorResponse(err);
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const parsed = safeParseJson(transactionSchema, body);
@@ -32,7 +38,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const existing = await prisma.transaction.findFirst({
-      where: { id, userId: session.userId },
+      where: { id: idParsed.data, userId: session.userId },
       select: { id: true },
     });
 
@@ -70,7 +76,7 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const transaction = await prisma.transaction.update({
-      where: { id },
+      where: { id: idParsed.data },
       data: {
         type,
         amount,
@@ -103,9 +109,13 @@ export async function DELETE(request: Request, { params }: Params) {
   }
 
   const { id } = await params;
+  const idParsed = cuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return NextResponse.json({ error: "Transaksi tidak ditemukan" }, { status: 404 });
+  }
 
   const existing = await prisma.transaction.findFirst({
-    where: { id, userId: session.userId },
+    where: { id: idParsed.data, userId: session.userId },
     select: { id: true },
   });
 
@@ -116,6 +126,6 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  await prisma.transaction.delete({ where: { id } });
+  await prisma.transaction.delete({ where: { id: idParsed.data } });
   return NextResponse.json({ message: "Transaksi dihapus" });
 }

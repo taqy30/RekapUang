@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getJwtSecretKey, isSameOrigin } from "@/lib/security";
 
 const COOKIE_NAME = "rekapuang_session";
 const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
-
-function getSecret() {
-  return new TextEncoder().encode(
-    process.env.JWT_SECRET || "ganti-dengan-secret-panjang-di-production"
-  );
-}
 
 function applySecurityHeaders(response: NextResponse) {
   response.headers.set("X-Frame-Options", "DENY");
@@ -24,20 +19,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  // Basic CSRF protection for API mutating routes
-  if (pathname.startsWith("/api/") && ["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
-    const origin = request.headers.get("origin");
-    const host = request.headers.get("host");
-    
-    // In local dev, origin might be missing. If it exists, ensure it matches host.
-    if (origin && host) {
-      const originUrl = new URL(origin);
-      if (originUrl.host !== host) {
-        return applySecurityHeaders(
-          NextResponse.json({ error: "Invalid CSRF Origin" }, { status: 403 })
-        );
-      }
-    }
+  if (
+    pathname.startsWith("/api/") &&
+    ["POST", "PUT", "DELETE", "PATCH"].includes(method) &&
+    !isSameOrigin(request)
+  ) {
+    return applySecurityHeaders(
+      NextResponse.json({ error: "Origin tidak valid" }, { status: 403 })
+    );
   }
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -45,7 +34,7 @@ export async function middleware(request: NextRequest) {
 
   if (token) {
     try {
-      await jwtVerify(token, getSecret(), { algorithms: ["HS256"] });
+      await jwtVerify(token, getJwtSecretKey(), { algorithms: ["HS256"] });
       isLoggedIn = true;
     } catch {
       isLoggedIn = false;

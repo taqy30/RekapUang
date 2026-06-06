@@ -5,6 +5,7 @@ import { createSession, isSameOrigin } from "@/lib/auth";
 import { verifyOtpSchema, safeParseJson } from "@/lib/validation";
 import { OTP_MAX_ATTEMPTS, verifyOtp } from "@/lib/otp";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { jsonBodyErrorResponse, readJsonBody } from "@/lib/security";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
@@ -22,9 +23,10 @@ export async function POST(request: Request) {
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Format tidak valid" }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (err) {
+    const parsed = jsonBodyErrorResponse(err);
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const parsed = safeParseJson(verifyOtpSchema, body);
@@ -34,7 +36,28 @@ export async function POST(request: Request) {
 
   const { email, code } = parsed.data;
 
+  const emailLimit = rateLimit(`verify:email:${email}`, 10, 60 * 15);
+  if (!emailLimit.ok) {
+    return NextResponse.json(
+      { error: "Terlalu banyak percobaan verifikasi untuk email ini." },
+      { status: 429 }
+    );
+  }
+
   try {
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      await prisma.pendingRegistration.delete({ where: { email } }).catch(() => {});
+      return NextResponse.json(
+        { error: "Email sudah terdaftar. Silakan login." },
+        { status: 409 }
+      );
+    }
+
     const pending = await prisma.pendingRegistration.findUnique({
       where: { email },
     });
