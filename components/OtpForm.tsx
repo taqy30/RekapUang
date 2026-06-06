@@ -48,7 +48,15 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Verifikasi gagal");
+        const message = data.error || "Verifikasi gagal";
+        setError(message);
+        if (res.status === 409) {
+          void notifyError(
+            "Email sudah terdaftar",
+            "Silakan masuk dengan akun yang sudah ada.",
+            2800
+          );
+        }
         setCode("");
         setLoading(false);
         return;
@@ -76,7 +84,10 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
         void notifyError("Gagal", data.error || "Gagal mengirim ulang");
         return;
       }
-      void notifySuccess("Berhasil", "Kode baru telah dikirim");
+      void notifySuccess(
+        "Kode terkirim",
+        "Kode baru dikirim ke Inbox Utama email Anda."
+      );
       setCooldown(RESEND_COOLDOWN);
     } catch {
       void notifyError("Koneksi gagal", "Periksa internet lalu coba lagi.");
@@ -98,9 +109,8 @@ export default function OtpForm({ email, onBack }: OtpFormProps) {
             <span className="font-medium text-foreground">{email}</span>
           </p>
           <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed">
-            Jika belum masuk, cek folder <span className="font-medium text-foreground">Inbox Utama</span>,{" "}
-            <span className="font-medium text-foreground">Spam</span>, atau{" "}
-            <span className="font-medium text-foreground">Semua Email</span>.
+            Buka folder <span className="font-medium text-foreground">Inbox Utama</span>{" "}
+            pada email di atas. Kode biasanya tiba dalam beberapa detik.
           </p>
         </div>
       </div>

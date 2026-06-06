@@ -13,7 +13,7 @@ import {
   slideFromRightRelaxed,
 } from "@/lib/motion";
 import { goToDashboardAfterAuth } from "@/lib/navigation";
-import { notifyInfo } from "@/lib/notify";
+import { notifyError, notifyInfo } from "@/lib/notify";
 import OtpForm from "./OtpForm";
 import AppFooter from "./AppFooter";
 import { Button } from "@/components/ui/button";
@@ -113,7 +113,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Terjadi kesalahan");
+        const message = data.error || "Terjadi kesalahan";
+        setError(message);
+        if (mode === "register" && res.status === 409) {
+          void notifyError(
+            "Email sudah terdaftar",
+            "Gunakan email lain atau masuk dengan akun yang sudah ada.",
+            2800
+          );
+        }
         setSubmitting(false);
         return;
       }
@@ -121,8 +129,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if (mode === "register") {
         void notifyInfo(
           "Kode OTP terkirim",
-          "Cek Inbox Utama, Spam, atau Semua Email.",
-          1800
+          `Kode verifikasi dikirim ke ${email}. Cek folder Inbox Utama.`,
+          2200
         );
         setStep("otp");
         setSubmitting(false);

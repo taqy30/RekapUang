@@ -109,10 +109,18 @@ export async function POST(request: Request) {
       await sendOtpEmail(email, name, code);
     } catch (err) {
       console.error("Gagal kirim email OTP:", err);
+      await prisma.pendingRegistration.delete({ where: { email } }).catch(() => {});
+      return NextResponse.json(
+        {
+          error:
+            "Gagal mengirim kode ke email. Periksa alamat email lalu coba lagi.",
+        },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json({
-      message: "Kode OTP telah dikirim ke email Anda.",
+      message: "Kode OTP telah dikirim ke Inbox Utama email Anda.",
       email,
     });
   } catch (err) {

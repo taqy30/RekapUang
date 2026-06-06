@@ -90,6 +90,20 @@ export function sortFundSources<T extends { slug: string }>(sources: T[]): T[] {
   });
 }
 
+export function hasFundSourceActivity(row: {
+  masuk: number;
+  keluar: number;
+}): boolean {
+  return row.masuk > 0 || row.keluar > 0;
+}
+
+/** Hanya tipe penyimpanan yang sudah punya transaksi (masuk/keluar). */
+export function filterFundSourceRowsWithActivity<
+  T extends { masuk: number; keluar: number; slug: string },
+>(rows: T[]): T[] {
+  return orderRecapAllRows(rows.filter(hasFundSourceActivity));
+}
+
 export function pickRecapPreviewRows<T extends { slug: string }>(
   rows: T[]
 ): T[] {

@@ -81,10 +81,17 @@ export async function POST(request: Request) {
       await sendOtpEmail(email, pending.name, code);
     } catch (err) {
       console.error("Gagal kirim email OTP:", err);
+      return NextResponse.json(
+        {
+          error:
+            "Gagal mengirim kode ke email. Periksa koneksi SMTP atau coba lagi.",
+        },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json({
-      message: "Kode OTP baru telah dikirim.",
+      message: "Kode OTP baru telah dikirim ke Inbox Utama email Anda.",
     });
   } catch (err) {
     console.error("Resend OTP error:", err);

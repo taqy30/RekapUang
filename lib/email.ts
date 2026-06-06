@@ -93,12 +93,21 @@ export async function sendOtpEmail(
     return;
   }
 
+  const from = fromAddress();
+
   await transporter.sendMail({
-    from: fromAddress(),
+    from,
     to,
-    subject: `Kode Verifikasi: ${code}`,
+    replyTo: from,
+    subject: "Kode verifikasi RekapUang",
     text: `Halo ${name},\n\nKode verifikasi RekapUang Anda: ${code}\nBerlaku ${OTP_TTL_MINUTES} menit.\n\nJangan bagikan kode ini ke siapa pun.\n`,
     html: otpEmailHtml(name, code),
+    priority: "high",
+    headers: {
+      "X-Priority": "1",
+      Importance: "high",
+      "X-Entity-Ref-ID": `rekapuang-otp-${Date.now()}`,
+    },
   });
 }
 
