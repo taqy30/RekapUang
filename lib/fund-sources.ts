@@ -66,7 +66,16 @@ export const FUND_SLUGS_IN_CATEGORY_TABLE = [
 
 export const DEFAULT_FUND_SOURCE_SLUG = "cash";
 
-/** 6 tipe yang ditampilkan di dashboard sebelum "Selengkapnya". */
+/** Selalu di urutan 1–2 di dashboard rekap penyimpanan. */
+export const DASHBOARD_RECAP_PINNED_SLUGS = ["cash", "bca"] as const;
+
+/** Jumlah baris rekap di dashboard sebelum tombol Selengkapnya. */
+export const DASHBOARD_RECAP_VISIBLE_COUNT = 6;
+
+const DASHBOARD_RECAP_DYNAMIC_SLOTS =
+  DASHBOARD_RECAP_VISIBLE_COUNT - DASHBOARD_RECAP_PINNED_SLUGS.length;
+
+/** @deprecated Gunakan DASHBOARD_RECAP_PINNED_SLUGS + pickRecapDashboardRows */
 export const FUND_SOURCE_RECAP_PREVIEW_SLUGS = [
   "cash",
   "bca",
@@ -104,6 +113,18 @@ export function filterFundSourceRowsWithActivity<
   return orderRecapAllRows(rows.filter(hasFundSourceActivity));
 }
 
+export function sortFundSourcesByMasukDesc<
+  T extends { slug: string; masuk: number; keluar: number },
+>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
+    if (b.masuk !== a.masuk) return b.masuk - a.masuk;
+    if (b.keluar !== a.keluar) return b.keluar - a.keluar;
+    const ia = SLUG_ORDER.indexOf(a.slug as (typeof SLUG_ORDER)[number]);
+    const ib = SLUG_ORDER.indexOf(b.slug as (typeof SLUG_ORDER)[number]);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+}
+
 export function pickRecapPreviewRows<T extends { slug: string }>(
   rows: T[]
 ): T[] {
@@ -114,18 +135,50 @@ export function pickRecapPreviewRows<T extends { slug: string }>(
   });
 }
 
-/** 6 preview + tipe lain yang sudah punya transaksi (mis. BRI) tanpa perlu expand. */
+/** Dashboard: Cash & BCA + 4 tipe dengan pemasukan terbesar (yang sudah ada saldo). */
+export function pickRecapDashboardRows<
+  T extends { slug: string; masuk: number; keluar: number },
+>(rows: T[]): T[] {
+  const bySlug = new Map(rows.map((r) => [r.slug, r]));
+  const pinned = DASHBOARD_RECAP_PINNED_SLUGS.flatMap((slug) => {
+    const row = bySlug.get(slug);
+    return row ? [row] : [];
+  });
+
+  const pinnedSlugs = new Set<string>(DASHBOARD_RECAP_PINNED_SLUGS);
+  const dynamic = sortFundSourcesByMasukDesc(
+    rows.filter((row) => !pinnedSlugs.has(row.slug) && hasFundSourceActivity(row))
+  ).slice(0, DASHBOARD_RECAP_DYNAMIC_SLOTS);
+
+  return [...pinned, ...dynamic];
+}
+
+/** Selengkapnya: pinned dulu, lalu ada saldo urut pemasukan, terakhir yang 0/0. */
+export function orderRecapExpandedRows<
+  T extends { slug: string; masuk: number; keluar: number },
+>(rows: T[]): T[] {
+  const bySlug = new Map(rows.map((r) => [r.slug, r]));
+  const pinned = DASHBOARD_RECAP_PINNED_SLUGS.flatMap((slug) => {
+    const row = bySlug.get(slug);
+    return row ? [row] : [];
+  });
+
+  const pinnedSlugs = new Set<string>(DASHBOARD_RECAP_PINNED_SLUGS);
+  const withActivity = sortFundSourcesByMasukDesc(
+    rows.filter((row) => !pinnedSlugs.has(row.slug) && hasFundSourceActivity(row))
+  );
+  const emptyRows = sortFundSources(
+    rows.filter((row) => !pinnedSlugs.has(row.slug) && !hasFundSourceActivity(row))
+  );
+
+  return [...pinned, ...withActivity, ...emptyRows];
+}
+
+/** @deprecated Gunakan pickRecapDashboardRows */
 export function pickRecapCollapsedRows<
   T extends { slug: string; masuk: number; keluar: number },
 >(rows: T[]): T[] {
-  const previewSlugs = new Set<string>(FUND_SOURCE_RECAP_PREVIEW_SLUGS);
-  const preview = pickRecapPreviewRows(rows);
-  const extraActive = sortFundSources(
-    rows.filter(
-      (row) => hasFundSourceActivity(row) && !previewSlugs.has(row.slug)
-    )
-  );
-  return [...preview, ...extraActive];
+  return pickRecapDashboardRows(rows);
 }
 
 export function orderRecapAllRows<T extends { slug: string }>(rows: T[]): T[] {

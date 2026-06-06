@@ -44,8 +44,8 @@ import {
 } from "@/lib/transactions-display";
 import type { DashboardData } from "@/lib/dashboard-data";
 import {
-  orderRecapAllRows,
-  pickRecapCollapsedRows,
+  orderRecapExpandedRows,
+  pickRecapDashboardRows,
 } from "@/lib/fund-sources";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 import { confirmAction, notifyError, notifySuccess } from "@/lib/notify";
@@ -132,8 +132,8 @@ function RecapRowItem({
 function CollapsibleRecapGrid({ rows }: { rows: RecapRow[] }) {
   const [expanded, setExpanded] = useState(false);
 
-  const collapsedRows = useMemo(() => pickRecapCollapsedRows(rows), [rows]);
-  const allRows = useMemo(() => orderRecapAllRows(rows), [rows]);
+  const collapsedRows = useMemo(() => pickRecapDashboardRows(rows), [rows]);
+  const allRows = useMemo(() => orderRecapExpandedRows(rows), [rows]);
 
   const visible = expanded ? allRows : collapsedRows;
   const hiddenCount = allRows.length - collapsedRows.length;
@@ -462,8 +462,8 @@ export default function Dashboard({ userName }: DashboardProps) {
             <div>
               <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
               <CardDescription>
-                Cash, BCA, Seabank, Mandiri, ShopeePay, GoPay — ketuk baris
-                untuk riwayat lengkap
+                Cash & BCA selalu tampil; 4 lainnya otomatis dari pemasukan
+                terbesar. Yang masih Rp0 ada di Selengkapnya.
               </CardDescription>
             </div>
             <Link
