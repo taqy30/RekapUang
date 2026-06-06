@@ -43,7 +43,10 @@ import {
   sortTransactionsNewestFirst,
 } from "@/lib/transactions-display";
 import type { DashboardData } from "@/lib/dashboard-data";
-import { filterFundSourceRowsWithActivity } from "@/lib/fund-sources";
+import {
+  orderRecapAllRows,
+  pickRecapCollapsedRows,
+} from "@/lib/fund-sources";
 import { headerSlide, staggerContainer, staggerItem } from "@/lib/motion";
 import { confirmAction, notifyError, notifySuccess } from "@/lib/notify";
 
@@ -127,30 +130,48 @@ function RecapRowItem({
 }
 
 function CollapsibleRecapGrid({ rows }: { rows: RecapRow[] }) {
-  const activeRows = useMemo(
-    () => filterFundSourceRowsWithActivity(rows),
-    [rows]
-  );
+  const [expanded, setExpanded] = useState(false);
 
-  if (activeRows.length === 0) {
+  const collapsedRows = useMemo(() => pickRecapCollapsedRows(rows), [rows]);
+  const allRows = useMemo(() => orderRecapAllRows(rows), [rows]);
+
+  const visible = expanded ? allRows : collapsedRows;
+  const hiddenCount = allRows.length - collapsedRows.length;
+  const hasMore = hiddenCount > 0;
+
+  if (allRows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-2">
-        Belum ada data tipe penyimpanan. Tambah transaksi dengan tipe
-        penyimpanan (Cash, bank, e-wallet) untuk melihat rekap di sini.
+        Belum ada data tipe penyimpanan.
       </p>
     );
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {activeRows.map((row) => (
-        <RecapRowItem
-          key={row.id}
-          row={row}
-          variant="fund"
-          href={`/dashboard/penyimpanan/${row.slug}`}
-        />
-      ))}
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {visible.map((row) => (
+          <RecapRowItem
+            key={row.id}
+            row={row}
+            variant="fund"
+            href={`/dashboard/penyimpanan/${row.slug}`}
+          />
+        ))}
+      </div>
+      {hasMore && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full text-muted-foreground"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded
+            ? "Tampilkan lebih sedikit"
+            : `Selengkapnya (${hiddenCount} bank & e-wallet lainnya)`}
+        </Button>
+      )}
     </div>
   );
 }
@@ -441,8 +462,8 @@ export default function Dashboard({ userName }: DashboardProps) {
             <div>
               <CardTitle className="text-base">Rekap per tipe penyimpanan</CardTitle>
               <CardDescription>
-                Hanya tipe yang sudah punya transaksi. Ketuk baris untuk
-                riwayat lengkap.
+                Cash, BCA, Seabank, Mandiri, ShopeePay, GoPay — ketuk baris
+                untuk riwayat lengkap
               </CardDescription>
             </div>
             <Link

@@ -114,6 +114,20 @@ export function pickRecapPreviewRows<T extends { slug: string }>(
   });
 }
 
+/** 6 preview + tipe lain yang sudah punya transaksi (mis. BRI) tanpa perlu expand. */
+export function pickRecapCollapsedRows<
+  T extends { slug: string; masuk: number; keluar: number },
+>(rows: T[]): T[] {
+  const previewSlugs = new Set<string>(FUND_SOURCE_RECAP_PREVIEW_SLUGS);
+  const preview = pickRecapPreviewRows(rows);
+  const extraActive = sortFundSources(
+    rows.filter(
+      (row) => hasFundSourceActivity(row) && !previewSlugs.has(row.slug)
+    )
+  );
+  return [...preview, ...extraActive];
+}
+
 export function orderRecapAllRows<T extends { slug: string }>(rows: T[]): T[] {
   return sortFundSources(rows);
 }
