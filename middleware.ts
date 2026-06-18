@@ -55,6 +55,10 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(NextResponse.next());
   }
 
+  if (pathname === "/feedback") {
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   if (pathname === "/") {
     if (isLoggedIn) {
       return applySecurityHeaders(
@@ -78,6 +82,7 @@ export const config = {
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/feedback",
     "/dashboard/:path*",
     "/api/:path*",
   ],

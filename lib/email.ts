@@ -171,3 +171,97 @@ export async function sendPasswordResetEmail(
     html: resetPasswordEmailHtml(name, resetUrl),
   });
 }
+
+export type FeedbackEmailPayload = {
+  type: string;
+  typeLabel: string;
+  subject: string;
+  message: string;
+  contactEmail?: string;
+  pageUrl?: string;
+  senderName?: string;
+  senderEmail?: string;
+  ip?: string;
+};
+
+function feedbackEmailHtml(payload: FeedbackEmailPayload): string {
+  const rows = [
+    ["Jenis", payload.typeLabel],
+    ["Judul", payload.subject],
+    ["Pesan", payload.message.replace(/\n/g, "<br>")],
+    ["Email pengirim", payload.contactEmail || "—"],
+    ["Akun login", payload.senderEmail || "—"],
+    ["Nama akun", payload.senderName || "—"],
+    ["Halaman", payload.pageUrl || "—"],
+    ["IP", payload.ip || "—"],
+    ["Waktu", new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })],
+  ];
+
+  const bodyRows = rows
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#64748b;width:140px;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;color:#0f172a;">${escapeHtml(String(value))}</td></tr>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="id">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px 24px 8px 24px;">
+              <h1 style="margin:0;font-size:20px;color:#0f172a;">Masukan RekapUang</h1>
+              <p style="margin:8px 0 0 0;font-size:14px;color:#64748b;">Pesan baru dari form laporkan masalah / beri saran.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 24px 24px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">${bodyRows}</table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendFeedbackEmail(
+  to: string,
+  payload: FeedbackEmailPayload
+): Promise<void> {
+  const transporter = getTransporter();
+  const replyTo = payload.contactEmail || payload.senderEmail || undefined;
+  const subjectLine = `[RekapUang] ${payload.typeLabel}: ${payload.subject}`;
+
+  const text = [
+    "Masukan baru dari RekapUang",
+    "",
+    `Jenis   : ${payload.typeLabel}`,
+    `Judul   : ${payload.subject}`,
+    `Pesan   : ${payload.message}`,
+    `Email   : ${payload.contactEmail || "—"}`,
+    `Akun    : ${payload.senderEmail || "—"} (${payload.senderName || "—"})`,
+    `Halaman : ${payload.pageUrl || "—"}`,
+    `IP      : ${payload.ip || "—"}`,
+  ].join("\n");
+
+  if (!transporter) {
+    const banner = "═".repeat(58);
+    console.log(`\n${banner}\n  [DEV] Feedback untuk ${to}\n${text}\n${banner}\n`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: fromAddress(),
+    to,
+    replyTo: replyTo || fromAddress(),
+    subject: subjectLine,
+    text,
+    html: feedbackEmailHtml(payload),
+  });
+}
